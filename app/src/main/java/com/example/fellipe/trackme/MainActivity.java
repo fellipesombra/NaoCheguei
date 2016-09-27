@@ -1,6 +1,8 @@
 package com.example.fellipe.trackme;
 
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
@@ -63,9 +65,6 @@ public class MainActivity extends AppCompatActivity {
             SimpleLocation.openSettings(this);
         }
 
-        buttonsOffTrip();
-        //checkActiveTrip();
-
         _registerContactsButton.setOnClickListener(new View.OnClickListener() {
 
             @Override
@@ -92,11 +91,25 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        Intent intent = new Intent(this, LoginActivity.class);
-        startActivity(intent);
+
+        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        String userId = sharedPref.getString(getString(R.string.user_id), null);
+        String tripId = sharedPref.getString(getString(R.string.trip_id), null);
+
+        buttonsOffTrip();
+        if(tripId !=  null) {
+           //getTripInfo(tripId); Criar um objeto trip no session
+        }
+
+        if(userId != null) {
+            Session.getInstance().setUserId(userId);
+        }else{
+            Intent intent = new Intent(this, LoginActivity.class);
+            startActivity(intent);
+        }
     }
 
-    private void checkActiveTrip() {
+    private void getTripInfo() {
 
         String extraUrl = "/trip/user/"+Session.getInstance().getUserId();
         CustomRequest jsObjRequest = new CustomRequest(Request.Method.GET, TRIP_URL+extraUrl, null,

@@ -3,6 +3,9 @@
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="preference_file_key">br.com.naocheguei</string>
+    <string name="user_id">userid</string>
+    <string name="trip_id">tripid</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>

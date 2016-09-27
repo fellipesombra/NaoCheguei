@@ -1,6 +1,8 @@
 package com.example.fellipe.trackme;
 import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -113,7 +115,7 @@ public class LoginActivity extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_SIGNUP) {
             if (resultCode == RESULT_OK) {
-
+                addUserIdToSharedPrefs();
                 // TODO: Implement successful signup logic here
                 // By default we just finish the Activity and log them in automatically
                 this.finish();
@@ -127,8 +129,16 @@ public class LoginActivity extends AppCompatActivity {
         moveTaskToBack(true);
     }
 
+    public void addUserIdToSharedPrefs(){
+        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putString(getString(R.string.user_id),Session.getInstance().getUserId());
+        editor.commit();
+    }
+
     public void onLoginSuccess() {
         Toast.makeText(getBaseContext(), "Success", Toast.LENGTH_LONG).show();
+        addUserIdToSharedPrefs();
         _loginButton.setEnabled(true);
         finish();
     }
