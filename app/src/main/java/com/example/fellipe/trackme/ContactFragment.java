@@ -1,23 +1,23 @@
 package com.example.fellipe.trackme;
 
+import android.content.Context;
 import android.os.Bundle;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.Fragment;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
-
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
-import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
-import com.android.volley.toolbox.Volley;
 import com.example.fellipe.trackme.rest.CustomRequest;
 
 import org.json.JSONArray;
@@ -28,39 +28,49 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import butterknife.ButterKnife;
 import butterknife.InjectView;
 
 /**
- * Created by Fellipe on 28/07/2016.
+ * Created by Fellipe on 29/09/2016.
  */
-public class ContactActivity extends AppCompatActivity {
-    private static final String CONTACT_URL = "http://192.168.1.2:8080/onmyway-service/rest/contact";
+public class ContactFragment extends Fragment {
 
-    @InjectView(R.id.input_phone)
     EditText _phoneText;
-    @InjectView(R.id.input_contact_email)
     EditText _emailText;
-    @InjectView(R.id.btn_register)
     Button _registerButton;
-    @InjectView(R.id.list)
-    ListView listView ;
+    ListView _listView ;
 
-    ArrayList<String> contactList = new ArrayList<String>();
-
+    ArrayList<String> contactList = new ArrayList<>();
     private ArrayAdapter<String> listAdapter ;
+
+    Context context;
+
+    public ContactFragment() {
+        // Required empty public constructor
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_contact);
-        ButterKnife.inject(this);
 
-
-        listAdapter = new ArrayAdapter<String>(this, R.layout.simple_row, contactList);
+        context = getActivity();
+        listAdapter = new ArrayAdapter<>(context, R.layout.simple_row, contactList);
 
         getAllUserContacts();
-        listView.setAdapter(listAdapter);
+    }
+
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+        // Inflate the layout for this fragment
+        View view =  inflater.inflate(R.layout.fragment_contact, container, false);
+
+        _phoneText = (EditText) view.findViewById(R.id.input_phone);
+        _emailText = (EditText) view.findViewById(R.id.input_contact_email);
+        _registerButton = (Button) view.findViewById(R.id.btn_register);
+        _listView= (ListView) view.findViewById(R.id.list);
+
+        _listView.setAdapter(listAdapter);
 
         _registerButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -69,12 +79,13 @@ public class ContactActivity extends AppCompatActivity {
             }
         });
 
+        return view;
     }
 
     private void getAllUserContacts() {
         listAdapter.clear();
         String url = "/"+Session.getInstance().getUserId();
-        JsonArrayRequest jsObjRequest = new JsonArrayRequest( CONTACT_URL+url,
+        JsonArrayRequest jsObjRequest = new JsonArrayRequest( getString(R.string.contact_rest_url)+url,
                 new Response.Listener<JSONArray>() {
                     @Override
                     public void onResponse(JSONArray response) {
@@ -97,8 +108,7 @@ public class ContactActivity extends AppCompatActivity {
         };
 
 
-        RequestQueue queue = Volley.newRequestQueue(this);
-        queue.add(jsObjRequest);
+        MySingleton.getInstance(context).addToRequestQueue(jsObjRequest);
     }
 
     private void registerContact() {
@@ -114,23 +124,23 @@ public class ContactActivity extends AppCompatActivity {
             return;
         }
 
-        Map<String, String> params = new HashMap<String, String>();
+        Map<String, String> params = new HashMap<>();
         params.put("id", Session.getInstance().getUserId());
         params.put("email", email);
         params.put("phone", phone);
 
-        CustomRequest jsObjRequest = new CustomRequest(Request.Method.POST, CONTACT_URL, params,
+        CustomRequest jsObjRequest = new CustomRequest(Request.Method.POST, getString(R.string.contact_rest_url), params,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        Toast.makeText(getBaseContext(), "Success", Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, "Success", Toast.LENGTH_LONG).show();
                         getAllUserContacts();
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(getBaseContext(), "Error!", Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, "Error!", Toast.LENGTH_LONG).show();
                     }
                 }){
         };
@@ -139,7 +149,7 @@ public class ContactActivity extends AppCompatActivity {
                 DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
-        RequestQueue queue = Volley.newRequestQueue(this);
-        queue.add(jsObjRequest);
+        MySingleton.getInstance(context).addToRequestQueue(jsObjRequest);
     }
+
 }

@@ -29,7 +29,6 @@ import butterknife.InjectView;
  */
 public class LoginActivity extends AppCompatActivity {
     private static final int REQUEST_SIGNUP = 0;
-    private static final String REGISTER_URL = "http://192.168.1.2:8080/onmyway-service/rest/user";
 
     @InjectView(R.id.input_email) EditText _emailText;
     @InjectView(R.id.input_password) EditText _passwordText;
@@ -79,7 +78,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void authenticate(final String email, final String password) {
         String queryParam = "?email="+email+"&password="+password;
-        CustomRequest jsObjRequest = new CustomRequest(Request.Method.GET, REGISTER_URL+queryParam, null,
+        CustomRequest jsObjRequest = new CustomRequest(Request.Method.GET, getString(R.string.user_rest_url)+queryParam, null,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {

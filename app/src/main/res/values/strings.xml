@@ -1,11 +1,16 @@
 <resources>
-    <string name="app_name">TrackME</string>
+    <string name="app_name">Não Cheguei!</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
     <string name="preference_file_key">br.com.naocheguei</string>
+    <string name="logout">Logout</string>
     <string name="user_id">userid</string>
     <string name="trip_id">tripid</string>
+
+    <string name="map_rest_url">http://192.168.1.2:8080/onmyway-service/rest/map</string>
+    <string name="contact_rest_url">http://192.168.1.2:8080/onmyway-service/rest/contact</string>
+    <string name="user_rest_url">http://192.168.1.2:8080/onmyway-service/rest/user</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
