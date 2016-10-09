@@ -1,10 +1,17 @@
 package com.example.fellipe.trackme;
 
 import android.content.Context;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -28,47 +35,41 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import butterknife.ButterKnife;
 import butterknife.InjectView;
 
 /**
  * Created by Fellipe on 29/09/2016.
  */
-public class ContactFragment extends Fragment {
+public class ContactActivity extends AppCompatActivity {
 
+    @InjectView(R.id.input_phone)
     EditText _phoneText;
+    @InjectView(R.id.input_contact_email)
     EditText _emailText;
+    @InjectView(R.id.btn_register)
     Button _registerButton;
+    @InjectView(R.id.list)
     ListView _listView ;
+    @InjectView(R.id.my_toolbar)
+    Toolbar myToolbar;
+
 
     ArrayList<String> contactList = new ArrayList<>();
     private ArrayAdapter<String> listAdapter ;
 
-    Context context;
-
-    public ContactFragment() {
-        // Required empty public constructor
-    }
-
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_contact);
 
-        context = getActivity();
-        listAdapter = new ArrayAdapter<>(context, R.layout.simple_row, contactList);
+        ButterKnife.inject(this);
+
+        setSupportActionBar(myToolbar);
+
+        listAdapter = new ArrayAdapter<>(this, R.layout.simple_row, contactList);
 
         getAllUserContacts();
-    }
-
-    @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
-        View view =  inflater.inflate(R.layout.fragment_contact, container, false);
-
-        _phoneText = (EditText) view.findViewById(R.id.input_phone);
-        _emailText = (EditText) view.findViewById(R.id.input_contact_email);
-        _registerButton = (Button) view.findViewById(R.id.btn_register);
-        _listView= (ListView) view.findViewById(R.id.list);
 
         _listView.setAdapter(listAdapter);
 
@@ -78,8 +79,6 @@ public class ContactFragment extends Fragment {
                 registerContact();
             }
         });
-
-        return view;
     }
 
     private void getAllUserContacts() {
@@ -108,7 +107,7 @@ public class ContactFragment extends Fragment {
         };
 
 
-        MySingleton.getInstance(context).addToRequestQueue(jsObjRequest);
+        MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
     private void registerContact() {
@@ -133,14 +132,14 @@ public class ContactFragment extends Fragment {
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        Toast.makeText(context, "Success", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getBaseContext(), "Success", Toast.LENGTH_LONG).show();
                         getAllUserContacts();
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(context, "Error!", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getBaseContext(), "Error!", Toast.LENGTH_LONG).show();
                     }
                 }){
         };
@@ -149,7 +148,41 @@ public class ContactFragment extends Fragment {
                 DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
-        MySingleton.getInstance(context).addToRequestQueue(jsObjRequest);
+        MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
+    public void logout(){
+        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.clear();
+        editor.commit();
+        Session.getInstance().setUserId(null);
+        Session.getInstance().setTripId(null);
+    }
+
+    public void goToLoginPage(){
+        Intent intent = new Intent(getApplicationContext(), LoginActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.logout:
+                logout();
+                goToLoginPage();
+                return true;
+            case R.id.contatos:
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 }
