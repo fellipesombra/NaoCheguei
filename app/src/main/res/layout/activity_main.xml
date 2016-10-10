@@ -61,7 +61,7 @@
             <EditText android:id="@+id/input_time"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:inputType="number"
+                android:inputType="text"
                 android:hint="Estimated Time (minutes)"/>
         </android.support.design.widget.TextInputLayout>
 

@@ -19,6 +19,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 
@@ -44,10 +45,13 @@ import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -62,6 +66,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private static final long DELAY = 1000*20;
     private static final String TAG = "MAINACTIVITY";
+    private static final String GOOGLE_DISTANCE_MATRIX_API_URL = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=%s,%s&destinations=%s,%s&mode=%s&language=pt-BR&key=%s";
 
     @InjectView(R.id.input_time)
     EditText _timeText;
@@ -109,8 +114,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
-                // TODO: Get info about the selected place.
-                Log.i(TAG, "Place: " + place.getName());
+                mMap.clear();
+                mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title(place.getName().toString()));
+                CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 15);
+                mMap.animateCamera(cameraUpdate);
+
+                updateEstimatedTime(place);
             }
 
             @Override
@@ -150,6 +159,41 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
         }
+    }
+
+    private void updateEstimatedTime(Place place) {
+        String url = String.format(GOOGLE_DISTANCE_MATRIX_API_URL,location.getLatitude(),location.getLongitude(),place.getLatLng().latitude,place.getLatLng().longitude,"driving",getResources().getString(R.string.google_distance_matrix_key));
+        CustomRequest jsObjRequest = new CustomRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            JSONObject elements = response.getJSONArray("rows").getJSONObject(0).getJSONArray("elements").getJSONObject(0);
+                            String estimatedTimeText = "Não há previsões";
+                            int estimatedTimeSeconds = 0;
+                            if(elements.getString("status").equalsIgnoreCase("ok")) {
+                                estimatedTimeText = elements.getJSONObject("duration").getString("text");
+                                estimatedTimeSeconds = elements.getJSONObject("duration").getInt("value");
+                            }
+
+                            _timeText.setText(estimatedTimeText, TextView.BufferType.NORMAL);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                        Log.d(TAG,response.toString());
+
+
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d(TAG, error.getMessage());
+                    }
+                }){
+        };
+
+        MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
     public void logout(){
