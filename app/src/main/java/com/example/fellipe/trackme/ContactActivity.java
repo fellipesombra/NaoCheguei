@@ -4,16 +4,13 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.support.v4.app.Fragment;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
@@ -25,7 +22,9 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
-import com.example.fellipe.trackme.rest.CustomRequest;
+import com.example.fellipe.trackme.util.rest.CustomRequest;
+import com.example.fellipe.trackme.util.rest.MySingleton;
+import com.example.fellipe.trackme.util.Session;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -83,7 +82,7 @@ public class ContactActivity extends AppCompatActivity {
 
     private void getAllUserContacts() {
         listAdapter.clear();
-        String url = "/"+Session.getInstance().getUserId();
+        String url = "/"+ Session.getInstance().getUserId();
         JsonArrayRequest jsObjRequest = new JsonArrayRequest( getString(R.string.contact_rest_url)+url,
                 new Response.Listener<JSONArray>() {
                     @Override

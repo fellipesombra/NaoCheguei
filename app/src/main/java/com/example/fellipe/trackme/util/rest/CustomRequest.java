@@ -1,4 +1,4 @@
-package com.example.fellipe.trackme.rest;
+package com.example.fellipe.trackme.util.rest;
 import com.android.volley.NetworkResponse;
 import com.android.volley.ParseError;
 import com.android.volley.Request;

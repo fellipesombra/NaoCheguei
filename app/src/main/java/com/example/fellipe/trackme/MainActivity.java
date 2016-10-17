@@ -17,41 +17,38 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
-
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.example.fellipe.trackme.rest.CustomRequest;
+import com.example.fellipe.trackme.enums.TransportType;
+import com.example.fellipe.trackme.runnable.EstimatedTimeUpdater;
+import com.example.fellipe.trackme.runnable.LocationTracker;
+import com.example.fellipe.trackme.service.MapService;
+import com.example.fellipe.trackme.util.Session;
+import com.example.fellipe.trackme.util.rest.CustomRequest;
+import com.example.fellipe.trackme.util.rest.MySingleton;
 import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
-import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.places.Place;
-import com.google.android.gms.location.places.Places;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
-import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -64,24 +61,38 @@ import im.delight.android.location.SimpleLocation;
  */
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleApiClient.OnConnectionFailedListener {
 
-    private static final long DELAY = 1000*20;
     private static final String TAG = "MAINACTIVITY";
-    private static final String GOOGLE_DISTANCE_MATRIX_API_URL = "https://maps.googleapis.com/maps/api/distancematrix/json?origins=%s,%s&destinations=%s,%s&mode=%s&language=pt-BR&key=%s";
 
-    @InjectView(R.id.input_time)
-    EditText _timeText;
+    @InjectView(R.id.estimatedTimeText)
+    TextView _timeText;
+    @InjectView(R.id.btn_car)
+    ImageButton _carButton;
+    @InjectView(R.id.btn_bike)
+    ImageButton _bikeButton;
+    @InjectView(R.id.btn_bus)
+    ImageButton _busButton;
+    @InjectView(R.id.btn_walking)
+    ImageButton _walkingButton;
+
     @InjectView(R.id.btn_iniciar_viagem)
-    Button _startTripButton;
+    ImageButton _startTripButton;
     @InjectView(R.id.btn_finalizar_viagem)
-    Button _endTripButton;
+    ImageButton _endTripButton;
+
     @InjectView(R.id.my_toolbar)
     Toolbar myToolbar;
 
     private GoogleMap mMap;
 
     private Handler handler = new Handler();
-    private Runnable runnable;
+    private Runnable locationTracker;
+    private Runnable estimatedTimeUpdater;
     private SimpleLocation location;
+
+    private MapService mapService;
+    private TransportType activeTransportType;
+    private Place activeDestination;
+    private boolean activeTrip;
 
 
     @Override
@@ -96,6 +107,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // ask the user to enable location access
             SimpleLocation.openSettings(this);
         }
+
+
+        mapService = new MapService(getResources().getString(R.string.google_distance_matrix_key), this, location);
+
+        mapService.changeTransportType(TransportType.DRIVING);
+        activeTransportType = TransportType.DRIVING;
+        _carButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
+        updateEstimatedTimeText();
 
         setSupportActionBar(myToolbar);
 
@@ -114,35 +133,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
+                mapService.clear();
                 mMap.clear();
+
+                mapService.updateEstimatedTime(place);
+
                 mMap.addMarker(new MarkerOptions().position(place.getLatLng()).title(place.getName().toString()));
                 CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(place.getLatLng(), 15);
                 mMap.animateCamera(cameraUpdate);
 
-                updateEstimatedTime(place);
+
+                activeDestination = place;
+                mapService.changeTransportType(activeTransportType);
+                updateEstimatedTimeText();
             }
 
             @Override
             public void onError(Status status) {
+                mMap.clear();
+                mapService.clear();
+                activeDestination = null;
                 // TODO: Handle the error.
                 Log.i(TAG, "An error occurred: " + status);
-            }
-        });
-
-        _startTripButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                startTrip();
-            }
-        });
-
-        _endTripButton.setOnClickListener(new View.OnClickListener() {
-
-            @Override
-            public void onClick(View v) {
-                endTrip();
-
             }
         });
 
@@ -161,42 +173,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private void updateEstimatedTime(Place place) {
-        String url = String.format(GOOGLE_DISTANCE_MATRIX_API_URL,location.getLatitude(),location.getLongitude(),place.getLatLng().latitude,place.getLatLng().longitude,"driving",getResources().getString(R.string.google_distance_matrix_key));
-        CustomRequest jsObjRequest = new CustomRequest(Request.Method.GET, url, null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            JSONObject elements = response.getJSONArray("rows").getJSONObject(0).getJSONArray("elements").getJSONObject(0);
-                            String estimatedTimeText = "Não há previsões";
-                            int estimatedTimeSeconds = 0;
-                            if(elements.getString("status").equalsIgnoreCase("ok")) {
-                                estimatedTimeText = elements.getJSONObject("duration").getString("text");
-                                estimatedTimeSeconds = elements.getJSONObject("duration").getInt("value");
-                            }
 
-                            _timeText.setText(estimatedTimeText, TextView.BufferType.NORMAL);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                        Log.d(TAG,response.toString());
-
-
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d(TAG, error.getMessage());
-                    }
-                }){
-        };
-
-        MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
-    }
 
     public void logout(){
+
+        //TODO CASO ESTEJA EM VIAGEM = POPUP AVISANDO QUE VAI TERMINAR A VIAGEM COM CONFIRMAÇÃO DO USUÁRIO
+
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.clear();
@@ -270,26 +252,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void buttonsOnTrip(){
         _startTripButton.setVisibility(View.GONE);
-        _timeText.setVisibility(View.GONE);
         _endTripButton.setVisibility(View.VISIBLE);
     }
     private void buttonsOffTrip(){
         _startTripButton.setVisibility(View.VISIBLE);
-        _timeText.setVisibility(View.VISIBLE);
         _endTripButton.setVisibility(View.GONE);
     }
 
-    public void startTrip() {
-
-        String time = _timeText.getText().toString();
-        if (time.isEmpty() || !time.matches("\\d+(?:\\.\\d+)?")) {
-            _timeText.setError("Tempo invalido. Insira números.");
+    public void startTrip(View view) {
+        if(activeDestination == null){
+            Toast.makeText(getBaseContext(), "Adicione um destino!", Toast.LENGTH_SHORT).show();
+            return;
+        }else if(mapService.getActualEstimatedTime() == 0) {
+            Toast.makeText(getBaseContext(), "Adicione uma estimativa de tempo!", Toast.LENGTH_SHORT).show();
             return;
         }
 
         Map<String, String> params = new HashMap<>();
         params.put("id", Session.getInstance().getUserId());
-        params.put("time", time);
+        params.put("time", String.valueOf(mapService.getActualEstimatedTime()));
 
         CustomRequest jsObjRequest = new CustomRequest(Request.Method.POST, getString(R.string.map_rest_url)+"/trip", params,
                 new Response.Listener<JSONObject>() {
@@ -318,7 +299,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
-    public void endTrip() {
+    public void endTrip(View view) {
 
         String extra = "/trip/end/"+Session.getInstance().getTripId();
 
@@ -345,20 +326,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void startTripSucess() {
         Toast.makeText(this, "Trip Started!", Toast.LENGTH_LONG).show();
         buttonsOnTrip();
+        activeTrip = true;
 
-        runnable = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    location.beginUpdates();
-                    sendCurrentLocation(location.getLatitude(), location.getLongitude());
-                    handler.postDelayed(this, DELAY);
-                } catch (Exception e) {
-                    Log.e("Handler", e.getLocalizedMessage(), e);
-                }
-            }
-        };
-        handler.postDelayed(runnable, 0);
+        locationTracker = new LocationTracker(location,handler,this);
+        estimatedTimeUpdater = new EstimatedTimeUpdater(mapService,handler,_timeText);
+
+        handler.postDelayed(locationTracker, 0);
+        handler.postDelayed(estimatedTimeUpdater, 0);
     }
 
     private void startTripFail() {
@@ -368,45 +342,80 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void endTripSucess() {
         Toast.makeText(this, "Trip Finished!", Toast.LENGTH_LONG).show();
         buttonsOffTrip();
+        activeTrip = false;
+
         location.endUpdates();
-        handler.removeCallbacks(runnable);
+        handler.removeCallbacks(locationTracker);
+        handler.removeCallbacks(estimatedTimeUpdater);
     }
 
     private void endTripFail() {
         Toast.makeText(this, "Error!", Toast.LENGTH_LONG).show();
     }
 
-    private void sendCurrentLocation(double latitude, double longitude) {
-        Map<String, String> params = new HashMap<>();
-        params.put("id", Session.getInstance().getTripId());
-        params.put("lat", String.valueOf(latitude));
-        params.put("lng", String.valueOf(longitude));
 
-        CustomRequest jsObjRequest = new CustomRequest(Request.Method.POST, getString(R.string.map_rest_url)+"/position", params,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        Log.d("Trip","Enviado posição");
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d("Trip","Fallha ao enviar posição");
-                    }
-                }){
-        };
-        jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(
-                0,
-                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+    public void changeToCar(View view){
+        if(activeTrip){
+            return;
+        }
+        activeTransportType = TransportType.DRIVING;
+        mapService.changeTransportType(activeTransportType);
 
-        MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
+        clearImageButtonBackGrounds();
+        _carButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
+        updateEstimatedTimeText();
+    }
+
+    public void changeToBus(View view){
+        if(activeTrip){
+            return;
+        }
+        activeTransportType = TransportType.PUBLIC_TRANSPORT;
+        mapService.changeTransportType(activeTransportType);
+
+        clearImageButtonBackGrounds();
+        _busButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
+        updateEstimatedTimeText();
+    }
+
+    public void changeToWalk(View view){
+        if(activeTrip){
+            return;
+        }
+        activeTransportType = TransportType.WALKING;
+        mapService.changeTransportType(activeTransportType);
+
+        clearImageButtonBackGrounds();
+        _walkingButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
+        updateEstimatedTimeText();
+    }
+
+    public void changeToBike(View view){
+        if(activeTrip){
+            return;
+        }
+        activeTransportType = TransportType.BICYCLING;
+        mapService.changeTransportType(activeTransportType);
+
+        clearImageButtonBackGrounds();
+        _bikeButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
+        updateEstimatedTimeText();
+    }
+
+    private void clearImageButtonBackGrounds() {
+        _busButton.setBackground(null);
+        _carButton.setBackground(null);
+        _walkingButton.setBackground(null);
+        _bikeButton.setBackground(null);
+    }
+    private void updateEstimatedTimeText() {
+        _timeText.setText(mapService.getActualEstimatedTimeText());
     }
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        mMap.setPadding(0,50,0,0);
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);

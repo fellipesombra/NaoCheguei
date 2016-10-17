@@ -1,4 +1,4 @@
-package com.example.fellipe.trackme;
+package com.example.fellipe.trackme.util.rest;
 
 import android.content.Context;
 

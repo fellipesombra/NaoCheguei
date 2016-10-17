@@ -1,4 +1,4 @@
-package com.example.fellipe.trackme;
+package com.example.fellipe.trackme.util;
 
 /**
  * Created by Fellipe on 28/07/2016.
