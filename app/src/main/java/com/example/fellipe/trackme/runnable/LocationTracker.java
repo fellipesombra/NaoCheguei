@@ -52,7 +52,7 @@ public class LocationTracker implements Runnable{
 
     private void sendCurrentLocation(double latitude, double longitude) {
         Map<String, String> params = new HashMap<>();
-        params.put("id", Session.getInstance().getTripId());
+        params.put("id", Session.getInstance().getTrip().getTripId());
         params.put("lat", String.valueOf(latitude));
         params.put("lng", String.valueOf(longitude));
 

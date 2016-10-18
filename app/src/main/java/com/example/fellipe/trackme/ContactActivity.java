@@ -156,7 +156,7 @@ public class ContactActivity extends AppCompatActivity {
         editor.clear();
         editor.commit();
         Session.getInstance().setUserId(null);
-        Session.getInstance().setTripId(null);
+        Session.getInstance().setTrip(null);
     }
 
     public void goToLoginPage(){

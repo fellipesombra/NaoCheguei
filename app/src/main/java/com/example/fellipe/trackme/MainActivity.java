@@ -25,6 +25,8 @@ import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.example.fellipe.trackme.dto.TripInfo;
+import com.example.fellipe.trackme.enums.RestResponseStatus;
 import com.example.fellipe.trackme.enums.TransportType;
 import com.example.fellipe.trackme.runnable.EstimatedTimeUpdater;
 import com.example.fellipe.trackme.runnable.LocationTracker;
@@ -92,7 +94,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private MapService mapService;
     private TransportType activeTransportType;
     private Place activeDestination;
-    private boolean activeTrip;
 
 
     @Override
@@ -120,8 +121,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         String userId = sharedPref.getString(getString(R.string.user_id), null);
-        String tripId = sharedPref.getString(getString(R.string.trip_id), null);
-
 
         MapFragment mapFragment = (MapFragment) getFragmentManager()
                 .findFragmentById(R.id.map);
@@ -158,21 +157,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         });
 
-        buttonsOffTrip();
-
-
-        if(tripId !=  null) {
-           //getTripInfo(tripId); Criar um objeto trip no session
-        }
-
         if(userId != null) {
             Session.getInstance().setUserId(userId);
+            //checkAtiveTrip();
         }else{
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
         }
+
+        updateStartTripButton();
     }
 
+    @Override
+    public void onBackPressed() {
+        // botão de voltar não fecha o aplicativo / deixa em segundo plano
+        moveTaskToBack(true);
+    }
 
 
     public void logout(){
@@ -184,7 +184,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         editor.clear();
         editor.apply();
         Session.getInstance().setUserId(null);
-        Session.getInstance().setTripId(null);
+        Session.getInstance().setTrip(null);
     }
 
     public void goToLoginPage(){
@@ -219,22 +219,34 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    private void updateStartTripButton(){
+        if(isTripActive()){
+            _startTripButton.setVisibility(View.GONE);
+            _endTripButton.setVisibility(View.VISIBLE);
+        }else{
+            _startTripButton.setVisibility(View.VISIBLE);
+            _endTripButton.setVisibility(View.GONE);
+        }
+    }
 
-    private void getTripInfo() {
+    private void checkAtiveTrip() {
 
-        String extraUrl = "/trip/user/"+Session.getInstance().getUserId();
+        String extraUrl = "/trip/user/"+ Session.getInstance().getUserId();
         CustomRequest jsObjRequest = new CustomRequest(Request.Method.GET, getString(R.string.map_rest_url)+extraUrl, null,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            if(response.get("id") != null && !response.get("id").toString().isEmpty()) {
-                                Session.getInstance().setTripId((String.valueOf(response.get("id"))));
-                                buttonsOnTrip();
+                            if(response.getInt("responseStatus") == RestResponseStatus.OK.getStatusCode()) {
+                                String tripId = String.valueOf(response.getInt("id"));
+                                double lat = response.getDouble("latitude");
+                                double lng = response.getDouble("longitude");
+                                int estimatedTime = response.getInt("estimatedTime");
+                                TripInfo trip = new TripInfo(tripId, new LatLng(lat,lng),estimatedTime);
+                                Session.getInstance().setTrip(trip);
                             }else{
-                                buttonsOffTrip();
+                                //erro ao recuperar viagem
                             }
-
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -243,6 +255,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
+                        //erro ao recuperar viagem
                     }
                 }){
         };
@@ -250,14 +263,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
-    private void buttonsOnTrip(){
-        _startTripButton.setVisibility(View.GONE);
-        _endTripButton.setVisibility(View.VISIBLE);
-    }
-    private void buttonsOffTrip(){
-        _startTripButton.setVisibility(View.VISIBLE);
-        _endTripButton.setVisibility(View.GONE);
-    }
 
     public void startTrip(View view) {
         if(activeDestination == null){
@@ -277,11 +282,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            Session.getInstance().setTripId((String.valueOf(response.get("id"))));
+                            TripInfo trip = new TripInfo(String.valueOf(response.get("id")),activeDestination.getLatLng(),mapService.getActualEstimatedTime());
+                            Session.getInstance().setTrip(trip);
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
-                        startTripSucess();
+                        startTripSuccess();
                     }
                 },
                 new Response.ErrorListener() {
@@ -301,15 +307,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void endTrip(View view) {
 
-        String extra = "/trip/end/"+Session.getInstance().getTripId();
+        String extra = "/trip/end/"+Session.getInstance().getTrip().getTripId();
 
         CustomRequest jsObjRequest = new CustomRequest(Request.Method.GET, getString(R.string.map_rest_url)+extra, null,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        Session.getInstance().setTripId(null);
-                        endTripSucess();
-
+                        Session.getInstance().setTrip(null);
+                        endTripSuccess();
                     }
                 },
                 new Response.ErrorListener() {
@@ -323,10 +328,39 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
-    private void startTripSucess() {
-        Toast.makeText(this, "Trip Started!", Toast.LENGTH_LONG).show();
-        buttonsOnTrip();
-        activeTrip = true;
+    public void addTime(View view){
+        if(activeDestination == null){
+            Toast.makeText(this, "Selecione um destino primeiro!", Toast.LENGTH_LONG).show();
+        }else if(!isTripActive()){
+            mapService.addActualEstimatedTime(1800);
+            updateEstimatedTimeText();
+        }else{// em viagem
+            String extra = "/trip/delay/"+Session.getInstance().getTrip().getTripId();
+
+            CustomRequest jsObjRequest = new CustomRequest(Request.Method.GET, getString(R.string.map_rest_url)+extra, null,
+                    new Response.Listener<JSONObject>() {
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            mapService.addActualEstimatedTime(1800);
+                            updateEstimatedTimeText();
+                        }
+                    },
+                    new Response.ErrorListener() {
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            Toast.makeText(MainActivity.this, "Erro de conexão! Tente de novo mais tarde...", Toast.LENGTH_SHORT).show();
+                        }
+                    }){
+            };
+
+            MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
+        }
+    }
+
+    private void startTripSuccess() {
+        Toast.makeText(this, "Boa viagem!", Toast.LENGTH_LONG).show();
+
+        updateStartTripButton();
 
         locationTracker = new LocationTracker(location,handler,this);
         estimatedTimeUpdater = new EstimatedTimeUpdater(mapService,handler,_timeText);
@@ -339,14 +373,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Toast.makeText(this, "Error!", Toast.LENGTH_LONG).show();
     }
 
-    private void endTripSucess() {
-        Toast.makeText(this, "Trip Finished!", Toast.LENGTH_LONG).show();
-        buttonsOffTrip();
-        activeTrip = false;
+    private void endTripSuccess() {
+        Toast.makeText(this, "Viagem encerrada!", Toast.LENGTH_LONG).show();
+
+        mapService.clear();
+        mMap.clear();
+        updateStartTripButton();
+        updateEstimatedTimeText();
+        centerMapUserLocation();
 
         location.endUpdates();
         handler.removeCallbacks(locationTracker);
         handler.removeCallbacks(estimatedTimeUpdater);
+    }
+
+    private boolean isTripActive(){
+        return Session.getInstance().getTrip() != null;
     }
 
     private void endTripFail() {
@@ -355,7 +397,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     public void changeToCar(View view){
-        if(activeTrip){
+        if(isTripActive()){
             return;
         }
         activeTransportType = TransportType.DRIVING;
@@ -367,7 +409,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void changeToBus(View view){
-        if(activeTrip){
+        if(isTripActive()){
             return;
         }
         activeTransportType = TransportType.PUBLIC_TRANSPORT;
@@ -379,7 +421,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void changeToWalk(View view){
-        if(activeTrip){
+        if(isTripActive()){
             return;
         }
         activeTransportType = TransportType.WALKING;
@@ -391,7 +433,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     public void changeToBike(View view){
-        if(activeTrip){
+        if(isTripActive()){
             return;
         }
         activeTransportType = TransportType.BICYCLING;
@@ -412,16 +454,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         _timeText.setText(mapService.getActualEstimatedTimeText());
     }
 
+    public void centerMapUserLocation(){
+        LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(position, 15);
+        mMap.animateCamera(cameraUpdate);
+    }
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.setPadding(0,50,0,0);
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
-            LatLng position = new LatLng(location.getLatitude(), location.getLongitude());
-            CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(position, 15);
-            mMap.animateCamera(cameraUpdate);
+           centerMapUserLocation();
         } else {
             Toast.makeText(getBaseContext(), "Permissão de localização é necessária!", Toast.LENGTH_LONG).show();
         }

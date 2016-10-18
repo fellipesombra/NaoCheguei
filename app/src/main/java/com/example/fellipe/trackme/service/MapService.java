@@ -6,10 +6,15 @@ import android.util.Log;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.example.fellipe.trackme.R;
+import com.example.fellipe.trackme.dto.TripInfo;
+import com.example.fellipe.trackme.enums.RestResponseStatus;
+import com.example.fellipe.trackme.util.Session;
 import com.example.fellipe.trackme.util.rest.CustomRequest;
 import com.example.fellipe.trackme.util.rest.MySingleton;
 import com.example.fellipe.trackme.enums.TransportType;
 import com.google.android.gms.location.places.Place;
+import com.google.android.gms.maps.model.LatLng;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -85,9 +90,16 @@ public class MapService {
         return actualEstimatedTime;
     }
 
+    public void setActualEstimatedTime(int actualEstimatedTime) {
+        this.actualEstimatedTime = actualEstimatedTime;
+    }
 
     public void decreaseActualEstimatedTime(int i) {
-        actualEstimatedTime = actualEstimatedTime - i;
+        actualEstimatedTime -= i;
+    }
+
+    public void addActualEstimatedTime(int i) {
+        actualEstimatedTime += i;
     }
 
     public String getActualEstimatedTimeText() {
@@ -113,4 +125,5 @@ public class MapService {
         estimatedTimes.put(TransportType.WALKING.getName(),0);
         estimatedTimes.put(TransportType.PUBLIC_TRANSPORT.getName(),0);
     }
+
 }

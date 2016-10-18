@@ -1,5 +1,7 @@
 package com.example.fellipe.trackme.util;
 
+import com.example.fellipe.trackme.dto.TripInfo;
+
 /**
  * Created by Fellipe on 28/07/2016.
  */
@@ -14,15 +16,14 @@ public class Session {
     }
 
     private String userId;
-    private String tripId;
+    private TripInfo trip;
 
-
-    public String getTripId() {
-        return tripId;
+    public TripInfo getTrip() {
+        return trip;
     }
 
-    public void setTripId(String tripId) {
-        this.tripId = tripId;
+    public void setTrip(TripInfo trip) {
+        this.trip = trip;
     }
 
     public String getUserId() {
