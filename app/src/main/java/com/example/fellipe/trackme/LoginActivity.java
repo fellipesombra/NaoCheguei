@@ -115,8 +115,7 @@ public class LoginActivity extends AppCompatActivity {
         if (requestCode == REQUEST_SIGNUP) {
             if (resultCode == RESULT_OK) {
                 addUserIdToSharedPrefs();
-                // TODO: Implement successful signup logic here
-                // By default we just finish the Activity and log them in automatically
+                setResult(RESULT_OK, null);
                 this.finish();
             }
         }
@@ -139,6 +138,7 @@ public class LoginActivity extends AppCompatActivity {
         Toast.makeText(getBaseContext(), "Success", Toast.LENGTH_LONG).show();
         addUserIdToSharedPrefs();
         _loginButton.setEnabled(true);
+        setResult(RESULT_OK, null);
         finish();
     }
 

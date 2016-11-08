@@ -38,6 +38,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.internal.PlaceEntity;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
 import com.google.android.gms.maps.CameraUpdate;
@@ -51,6 +52,9 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -93,7 +97,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private MapService mapService;
     private TransportType activeTransportType;
-    private Place activeDestination;
+    private LatLng activeDestination;
 
 
     @Override
@@ -109,18 +113,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             SimpleLocation.openSettings(this);
         }
 
-
-        mapService = new MapService(getResources().getString(R.string.google_distance_matrix_key), this, location);
-
-        mapService.changeTransportType(TransportType.DRIVING);
-        activeTransportType = TransportType.DRIVING;
-        _carButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
-        updateEstimatedTimeText();
-
         setSupportActionBar(myToolbar);
 
-        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-        String userId = sharedPref.getString(getString(R.string.user_id), null);
+        instantiateMap();
+
+        checkAtiveTrip();
+
+        updateStartTripButton();
+
+    }
+
+    private void instantiateMap() {
+        mapService = new MapService(getResources().getString(R.string.google_distance_matrix_key), this, location);
 
         MapFragment mapFragment = (MapFragment) getFragmentManager()
                 .findFragmentById(R.id.map);
@@ -142,7 +146,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mMap.animateCamera(cameraUpdate);
 
 
-                activeDestination = place;
+                activeDestination = place.getLatLng();
                 mapService.changeTransportType(activeTransportType);
                 updateEstimatedTimeText();
             }
@@ -156,16 +160,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.i(TAG, "An error occurred: " + status);
             }
         });
-
-        if(userId != null) {
-            Session.getInstance().setUserId(userId);
-            //checkAtiveTrip();
-        }else{
-            Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
-        }
-
-        updateStartTripButton();
     }
 
     @Override
@@ -229,6 +223,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    private void defaultTripConfigurations(){
+        mapService.changeTransportType(TransportType.DRIVING);
+        activeTransportType = TransportType.DRIVING;
+        _carButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
+        updateEstimatedTimeText();
+    }
+
+    private void returnToActiveTrip(TripInfo trip){
+        activeDestination = new LatLng(trip.getLatLng().latitude, trip.getLatLng().longitude);
+        mapService.setActualEstimatedTime(trip.getEstimatedTime());
+        mMap.addMarker(new MarkerOptions().position(trip.getLatLng()));
+        CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(trip.getLatLng(), 15);
+        mMap.animateCamera(cameraUpdate);
+        updateEstimatedTimeText();
+        startTripSuccess();
+    }
+
     private void checkAtiveTrip() {
 
         String extraUrl = "/trip/user/"+ Session.getInstance().getUserId();
@@ -237,15 +248,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            if(response.getInt("responseStatus") == RestResponseStatus.OK.getStatusCode()) {
-                                String tripId = String.valueOf(response.getInt("id"));
-                                double lat = response.getDouble("latitude");
-                                double lng = response.getDouble("longitude");
-                                int estimatedTime = response.getInt("estimatedTime");
+                            if(response.getInt("status") == RestResponseStatus.OK.getStatusCode()) {
+                                JSONObject tripJSON = response.getJSONObject("trip");
+                                String tripId = String.valueOf(tripJSON.getInt("id"));
+                                double lat = tripJSON.getDouble("latitude");
+                                double lng = tripJSON.getDouble("longitude");
+                                long endTime = tripJSON.getLong("endTime");
+                                int estimatedTime = calculateEstimatedTimeToDate(endTime);
                                 TripInfo trip = new TripInfo(tripId, new LatLng(lat,lng),estimatedTime);
                                 Session.getInstance().setTrip(trip);
+                                returnToActiveTrip(trip);
                             }else{
-                                //erro ao recuperar viagem
+                                defaultTripConfigurations();
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -261,6 +275,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         };
 
         MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
+    }
+
+    private int calculateEstimatedTimeToDate(long endTime) {
+        return (int) (endTime - (new Date()).getTime())/1000;
     }
 
 
@@ -282,7 +300,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            TripInfo trip = new TripInfo(String.valueOf(response.get("id")),activeDestination.getLatLng(),mapService.getActualEstimatedTime());
+                            TripInfo trip = new TripInfo(String.valueOf(response.get("id")),activeDestination,mapService.getActualEstimatedTime());
                             Session.getInstance().setTrip(trip);
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -381,6 +399,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         updateStartTripButton();
         updateEstimatedTimeText();
         centerMapUserLocation();
+        Session.getInstance().setTrip(null);
 
         location.endUpdates();
         handler.removeCallbacks(locationTracker);

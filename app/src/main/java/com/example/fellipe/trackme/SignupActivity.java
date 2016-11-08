@@ -42,9 +42,15 @@ public class SignupActivity extends AppCompatActivity {
         setContentView(R.layout.activity_signup);
         ButterKnife.inject(this);
 
+        _signupButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                signUpRequest();
+            }
+        });
     }
 
-    public void signUp(View view) {
+    public void signUpRequest() {
         if (!validate()) {
             onSignupFailed("Validate your info!");
             return;

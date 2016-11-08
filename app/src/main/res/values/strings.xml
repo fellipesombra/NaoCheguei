@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Não Cheguei!</string>
+    <string name="app_name">ÑCheguei!</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
@@ -25,6 +25,7 @@
     <string name="permission_rationale">"Contacts permissions are needed for providing email
         completions."
     </string>
-    <string name="title_activity_login2">Sign in</string>
-    <string name="title_activity_maps">Map</string>
+    <string name="title_activity_login2">Login</string>
+    <string name="title_activity_maps">Viagem</string>
+    <string name="title_activity_intro">Intro</string>
 </resources>

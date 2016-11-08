@@ -108,7 +108,7 @@
                     android:inputType="none"
                     android:id="@+id/estimatedTimeText"
                     android:gravity="center"
-                    android:text="2h 30m 20s"
+                    android:text="-"
                     android:layout_weight="1"
                     android:textColor="#8a8a8a"
                     android:textSize="30sp" />
