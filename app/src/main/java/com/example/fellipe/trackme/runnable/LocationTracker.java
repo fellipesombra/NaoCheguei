@@ -1,13 +1,18 @@
 package com.example.fellipe.trackme.runnable;
 
 import android.content.Context;
+import android.media.tv.TvView;
 import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
+import android.widget.TextView;
 
 import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
+import com.example.fellipe.trackme.enums.HandlerMessagesCode;
+import com.example.fellipe.trackme.service.MapService;
 import com.example.fellipe.trackme.util.rest.MySingleton;
 import com.example.fellipe.trackme.R;
 import com.example.fellipe.trackme.util.Session;
@@ -26,25 +31,45 @@ import im.delight.android.location.SimpleLocation;
 
 public class LocationTracker implements Runnable{
 
-    private static final long DELAY = 1000*60*2; //2min
+    private static final int DELAY_TO_MARK_LOCATION = 120;
+
+    private int secondsCounter = 1;
 
     private SimpleLocation location;
+    private MapService mapService;
+    private TextView timeText;
     private Handler handler;
     private Context context;
 
 
-    public LocationTracker(SimpleLocation location, Handler handler, Context context) {
+    public LocationTracker(SimpleLocation location, Handler handler, Context context, MapService mapService, TextView timeText) {
         this.location = location;
         this.handler = handler;
         this.context = context;
+        this.mapService = mapService;
+        this.timeText = timeText;
     }
 
     @Override
     public void run() {
         try {
-            location.beginUpdates();
-            sendCurrentLocation(location.getLatitude(), location.getLongitude());
-            handler.postDelayed(this, DELAY);
+            secondsCounter-=1;
+            if(secondsCounter == 0) {
+                location.beginUpdates();
+                sendCurrentLocation(location.getLatitude(), location.getLongitude());
+                secondsCounter = DELAY_TO_MARK_LOCATION;
+            }
+
+            mapService.decreaseActualEstimatedTime(1);
+            timeText.setText(mapService.getActualEstimatedTimeText());
+
+            if(mapService.getActualEstimatedTime() < 1){
+                Message message = new Message();
+                message.what = HandlerMessagesCode.TIME_FINISHED.getCode();
+                handler.sendMessage(message);
+            }else {
+                handler.postDelayed(this, 1000);
+            }
         } catch (Exception e) {
             Log.e("Handler", e.getLocalizedMessage(), e);
         }
