@@ -110,6 +110,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void handleMessage(Message msg) {
                 if(msg.what == HandlerMessagesCode.TIME_FINISHED.getCode()) {
                     endTripSuccess();
+                }else if(msg.what == HandlerMessagesCode.ARRIVED_AT_DESTIONATION.getCode()){
+                    endTripImpl();
                 }
             }
         };
@@ -297,6 +299,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             hasError = true;
         }else if(!location.hasLocationEnabled()){
             Toast.makeText(getBaseContext(), "Ative o GPS para iniciar a viagem!", Toast.LENGTH_SHORT).show();
+            SimpleLocation.openSettings(this);
             hasError = true;
         }
 
@@ -340,9 +343,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void endTrip(View view) {
         _endTripButton.setEnabled(false);
+        endTripImpl();
+    }
 
+    private void endTripImpl() {
         String extra = "/trip/end/"+Session.getInstance().getTrip().getTripId();
-
         CustomRequest jsObjRequest = new CustomRequest(Request.Method.GET, getString(R.string.map_rest_url)+extra, null,
                 new Response.Listener<JSONObject>() {
                     @Override
@@ -358,7 +363,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     }
                 }){
         };
-
         MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
@@ -400,6 +404,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         updateStartTripButton();
 
+        location.beginUpdates();
         locationTracker = new LocationTracker(location,handler,this,mapService,_timeText);
         handler.postDelayed(locationTracker, 0);
     }

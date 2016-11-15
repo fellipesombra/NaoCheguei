@@ -55,7 +55,6 @@ public class LocationTracker implements Runnable{
         try {
             secondsCounter-=1;
             if(secondsCounter == 0) {
-                location.beginUpdates();
                 sendCurrentLocation(location.getLatitude(), location.getLongitude());
                 secondsCounter = DELAY_TO_MARK_LOCATION;
             }
@@ -63,7 +62,12 @@ public class LocationTracker implements Runnable{
             mapService.decreaseActualEstimatedTime(1);
             timeText.setText(mapService.getActualEstimatedTimeText());
 
-            if(mapService.getActualEstimatedTime() < 1){
+            if(secondsCounter == 60 && isInDestinationRadius()){
+                Message message = new Message();
+                message.what = HandlerMessagesCode.ARRIVED_AT_DESTIONATION.getCode();
+                handler.sendMessage(message);
+            }
+            else if(mapService.getActualEstimatedTime() < 1 ){
                 Message message = new Message();
                 message.what = HandlerMessagesCode.TIME_FINISHED.getCode();
                 handler.sendMessage(message);
@@ -73,6 +77,29 @@ public class LocationTracker implements Runnable{
         } catch (Exception e) {
             Log.e("Handler", e.getLocalizedMessage(), e);
         }
+    }
+
+    private boolean isInDestinationRadius() {
+
+        boolean isInRadiusOfDestionation = false;
+
+        double radius = 0.1; //100m
+
+        double lat = location.getLatitude();
+        double lng = location.getLongitude();
+
+        double latDelta = radius/110.54;
+        double longDelta = radius/(111.320*Math.cos(Math.toDegrees(lat)));
+
+        double lat1 = lat + latDelta;
+        double lng1 = lng + longDelta;
+        double lat2 = lat - latDelta;
+        double lng2 = lng - longDelta;
+
+        if(lat < lat1 && lat > lat2 && lng < lng1 && lng > lng2){
+            isInRadiusOfDestionation = true;
+        }
+        return isInRadiusOfDestionation;
     }
 
     private void sendCurrentLocation(double latitude, double longitude) {
