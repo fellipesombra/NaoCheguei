@@ -5,7 +5,10 @@ package com.example.fellipe.trackme.enums;
  */
 public enum RestResponseStatus {
 
-    OK(0);
+    TRIP_FOUND(0),
+    CONTACT_DELETED(1),
+    CONTACT_ALREADY_EXISTS(2),
+    CONTACT_ADD(3);
 
     private int statusCode;
 

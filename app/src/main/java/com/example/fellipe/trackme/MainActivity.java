@@ -1,5 +1,6 @@
 package com.example.fellipe.trackme;
 
+import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -10,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -32,6 +34,7 @@ import com.example.fellipe.trackme.enums.RestResponseStatus;
 import com.example.fellipe.trackme.enums.TransportType;
 import com.example.fellipe.trackme.runnable.LocationTracker;
 import com.example.fellipe.trackme.service.MapService;
+import com.example.fellipe.trackme.service.NotificationService;
 import com.example.fellipe.trackme.util.Session;
 import com.example.fellipe.trackme.util.rest.CustomRequest;
 import com.example.fellipe.trackme.util.rest.MySingleton;
@@ -94,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Runnable locationTracker;
     private SimpleLocation location;
 
+    private NotificationService notificationService;
     private MapService mapService;
     private TransportType activeTransportType;
     private LatLng activeDestination;
@@ -106,12 +110,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         ButterKnife.inject(this);
 
+        notificationService = new NotificationService(this);
+
         handler = new Handler(){
             public void handleMessage(Message msg) {
                 if(msg.what == HandlerMessagesCode.TIME_FINISHED.getCode()) {
                     endTripSuccess();
                 }else if(msg.what == HandlerMessagesCode.ARRIVED_AT_DESTIONATION.getCode()){
                     endTripImpl();
+                }else if(msg.what == HandlerMessagesCode.X_MINUTES_LEFT.getCode()){
+                    notifyAboutEndingTrip();
                 }
             }
         };
@@ -199,6 +207,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         startActivity(intent);
     }
 
+    private void notifyAboutEndingTrip() {
+        NotificationCompat.Builder mBuilder = notificationService.createTimeLeftNotification("Faltam 5 minutos para acabar o tempo!", "Adicione mais tempo a viagem, caso seja necessário.");
+        int mNotificationId = 001;
+        NotificationManager mNotifyMgr =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        mNotifyMgr.notify(mNotificationId, mBuilder.build());
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -256,7 +272,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            if(!response.isNull("status") && response.getInt("status") == RestResponseStatus.OK.getStatusCode() && !response.isNull("trip")) {
+                            if(!response.isNull("status") && response.getInt("status") == RestResponseStatus.TRIP_FOUND.getStatusCode() && !response.isNull("trip")) {
                                 JSONObject tripJSON = response.getJSONObject("trip");
                                 String tripId = String.valueOf(tripJSON.getInt("id"));
                                 double lat = tripJSON.getDouble("latitude");
@@ -317,13 +333,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        try {
-                            TripInfo trip = new TripInfo(String.valueOf(response.get("id")),activeDestination,mapService.getActualEstimatedTime());
-                            Session.getInstance().setTrip(trip);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
+                        if(!response.isNull("id")) {
+                            try {
+                                TripInfo trip = new TripInfo(String.valueOf(response.get("id")), activeDestination, mapService.getActualEstimatedTime());
+                                Session.getInstance().setTrip(trip);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            startTripSuccess();
+                        }else{
+                            startTripFail();
                         }
-                        startTripSuccess();
                     }
                 },
                 new Response.ErrorListener() {

@@ -40,6 +40,7 @@ public class LocationTracker implements Runnable{
     private TextView timeText;
     private Handler handler;
     private Context context;
+    private Message message;
 
 
     public LocationTracker(SimpleLocation location, Handler handler, Context context, MapService mapService, TextView timeText) {
@@ -48,6 +49,7 @@ public class LocationTracker implements Runnable{
         this.context = context;
         this.mapService = mapService;
         this.timeText = timeText;
+        message = new Message();
     }
 
     @Override
@@ -62,13 +64,15 @@ public class LocationTracker implements Runnable{
             mapService.decreaseActualEstimatedTime(1);
             timeText.setText(mapService.getActualEstimatedTimeText());
 
-            if(secondsCounter == 60 && isInDestinationRadius()){
-                Message message = new Message();
-                message.what = HandlerMessagesCode.ARRIVED_AT_DESTIONATION.getCode();
+            if(mapService.getActualEstimatedTime() == 300){
+                message.what = HandlerMessagesCode.X_MINUTES_LEFT.getCode();
                 handler.sendMessage(message);
             }
-            else if(mapService.getActualEstimatedTime() < 1 ){
-                Message message = new Message();
+
+            if(secondsCounter == 60 && isInDestinationRadius()){
+                message.what = HandlerMessagesCode.ARRIVED_AT_DESTIONATION.getCode();
+                handler.sendMessage(message);
+            }else if(mapService.getActualEstimatedTime() < 1 ){
                 message.what = HandlerMessagesCode.TIME_FINISHED.getCode();
                 handler.sendMessage(message);
             }else {

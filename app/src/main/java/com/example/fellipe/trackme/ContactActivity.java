@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -12,7 +13,6 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -22,6 +22,9 @@ import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
+import com.example.fellipe.trackme.dto.ContatoDTO;
+import com.example.fellipe.trackme.enums.RestResponseStatus;
+import com.example.fellipe.trackme.util.MyListAdapter;
 import com.example.fellipe.trackme.util.rest.CustomRequest;
 import com.example.fellipe.trackme.util.rest.MySingleton;
 import com.example.fellipe.trackme.util.Session;
@@ -42,20 +45,18 @@ import butterknife.InjectView;
  */
 public class ContactActivity extends AppCompatActivity {
 
-    @InjectView(R.id.input_phone)
-    EditText _phoneText;
     @InjectView(R.id.input_contact_email)
     EditText _emailText;
     @InjectView(R.id.btn_register)
-    Button _registerButton;
+    FloatingActionButton _registerButton;
     @InjectView(R.id.list)
     ListView _listView ;
-    @InjectView(R.id.my_toolbar)
+    @InjectView(R.id.my_toolbar_contatos)
     Toolbar myToolbar;
 
 
-    ArrayList<String> contactList = new ArrayList<>();
-    private ArrayAdapter<String> listAdapter ;
+    ArrayList<ContatoDTO> contactList = new ArrayList<>();
+    private ArrayAdapter<ContatoDTO> listAdapter ;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -66,18 +67,19 @@ public class ContactActivity extends AppCompatActivity {
 
         setSupportActionBar(myToolbar);
 
-        listAdapter = new ArrayAdapter<>(this, R.layout.simple_row, contactList);
-
-        getAllUserContacts();
-
-        _listView.setAdapter(listAdapter);
-
         _registerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 registerContact();
             }
         });
+
+        listAdapter = new MyListAdapter(this, contactList);
+
+        getAllUserContacts();
+
+        _listView.setAdapter(listAdapter);
+
     }
 
     private void getAllUserContacts() {
@@ -89,7 +91,9 @@ public class ContactActivity extends AppCompatActivity {
                     public void onResponse(JSONArray response) {
                         try {
                             for (int i = 0; i < response.length(); i++) {
-                                listAdapter.add((String)response.getJSONObject(i).get("email"));
+                                String email = (String) response.getJSONObject(i).get("email");
+                                String id = String.valueOf(response.getJSONObject(i).get("id"));
+                                listAdapter.add( new ContatoDTO(id, email));
                             }
                             listAdapter.notifyDataSetChanged();
                         } catch (JSONException e) {
@@ -100,7 +104,7 @@ public class ContactActivity extends AppCompatActivity {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Log.d("teste", "error");
+                        Log.d("ContactActivity", "Erro na requisição REST.");
                     }
                 }){
         };
@@ -111,34 +115,38 @@ public class ContactActivity extends AppCompatActivity {
 
     private void registerContact() {
 
-        String phone = _phoneText.getText().toString();
         String email = _emailText.getText().toString();
         if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
             _emailText.setError("Entre um email válido");
-            return;
-        }
-        if(!phone.matches("\\d+(?:\\.\\d+)?")) {
-            _phoneText.setError("Somente numeros");
             return;
         }
 
         Map<String, String> params = new HashMap<>();
         params.put("id", Session.getInstance().getUserId());
         params.put("email", email);
-        params.put("phone", phone);
 
         CustomRequest jsObjRequest = new CustomRequest(Request.Method.POST, getString(R.string.contact_rest_url), params,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        Toast.makeText(getBaseContext(), "Success", Toast.LENGTH_LONG).show();
-                        getAllUserContacts();
+                        try {
+                            if(!response.isNull("status") && response.getInt("status") == RestResponseStatus.CONTACT_ADD.getStatusCode()) {
+                                Toast.makeText(getBaseContext(), "Contato adicionado", Toast.LENGTH_LONG).show();
+                                getAllUserContacts();
+                            }else if(!response.isNull("status") && response.getInt("status") == RestResponseStatus.CONTACT_ALREADY_EXISTS.getStatusCode()){
+                                Toast.makeText(getBaseContext(), "Contato já existente", Toast.LENGTH_LONG).show();
+                            }else{
+                                Toast.makeText(getBaseContext(), "Erro no servidor. Tente novamente mais tarde", Toast.LENGTH_LONG).show();
+                            }
+                        } catch (JSONException e) {
+                            Toast.makeText(getBaseContext(), "Erro no servidor. Tente novamente mais tarde", Toast.LENGTH_LONG).show();
+                        }
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(getBaseContext(), "Error!", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getBaseContext(), "Erro no servidor. Tente novamente mais tarde", Toast.LENGTH_LONG).show();
                     }
                 }){
         };
@@ -164,6 +172,11 @@ public class ContactActivity extends AppCompatActivity {
         startActivity(intent);
     }
 
+    public void goToTripPage(){
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        startActivity(intent);
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -178,7 +191,8 @@ public class ContactActivity extends AppCompatActivity {
                 logout();
                 goToLoginPage();
                 return true;
-            case R.id.contatos:
+            case R.id.viagem:
+                goToTripPage();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

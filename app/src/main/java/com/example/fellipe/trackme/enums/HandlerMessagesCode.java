@@ -7,7 +7,8 @@ package com.example.fellipe.trackme.enums;
 public enum HandlerMessagesCode {
 
     TIME_FINISHED(1),
-    ARRIVED_AT_DESTIONATION(2);
+    ARRIVED_AT_DESTIONATION(2),
+    X_MINUTES_LEFT(3);
 
     private int code;
 
