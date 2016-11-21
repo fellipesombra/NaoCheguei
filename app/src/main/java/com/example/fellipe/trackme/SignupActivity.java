@@ -52,7 +52,7 @@ public class SignupActivity extends AppCompatActivity {
 
     public void signUpRequest() {
         if (!validate()) {
-            onSignupFailed("Validate your info!");
+            onSignupFailed(getString(R.string.msg_error_validate_infos));
             return;
         }
 
@@ -61,7 +61,7 @@ public class SignupActivity extends AppCompatActivity {
         final ProgressDialog progressDialog = new ProgressDialog(SignupActivity.this,
                 R.style.AppTheme_Dark_Dialog);
         progressDialog.setIndeterminate(true);
-        progressDialog.setMessage("Creating Account...");
+        progressDialog.setMessage("Criando conta...");
         progressDialog.show();
 
         String name = _nameText.getText().toString();
@@ -90,7 +90,7 @@ public class SignupActivity extends AppCompatActivity {
                                 Session.getInstance().setUserId(userId);
                                 onSignupSuccess();
                             }else{
-                                onSignupFailed("E-mail already in use!");
+                                onSignupFailed(getString(R.string.msg_error_email_already_exists));
                             }
 
                         } catch (JSONException e) {
@@ -102,7 +102,7 @@ public class SignupActivity extends AppCompatActivity {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        onSignupFailed("Server error. Try again later...");
+                        onSignupFailed(getString(R.string.msg_server_error));
                     }
                 }){
         };
@@ -116,7 +116,7 @@ public class SignupActivity extends AppCompatActivity {
     }
 
     public void onSignupSuccess() {
-        Toast.makeText(getBaseContext(), "Welcome, "+_nameText.getText().toString(), Toast.LENGTH_LONG).show();
+        Toast.makeText(getBaseContext(), "Bem vindo, "+_nameText.getText().toString(), Toast.LENGTH_LONG).show();
         _signupButton.setEnabled(true);
         setResult(RESULT_OK, null);
         finish();
@@ -140,21 +140,21 @@ public class SignupActivity extends AppCompatActivity {
         String password = _passwordText.getText().toString();
 
         if (name.isEmpty() || name.length() < 3) {
-            _nameText.setError("at least 3 characters");
+            _nameText.setError(getString(R.string.msg_error_name_characteres));
             valid = false;
         } else {
             _nameText.setError(null);
         }
 
         if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            _emailText.setError("enter a valid email address");
+            _emailText.setError(getString(R.string.msg_error_valid_email));
             valid = false;
         } else {
             _emailText.setError(null);
         }
 
         if (password.isEmpty() || password.length() < 4 || password.length() > 10 || !password.matches("[A-Za-z0-9]+")) {
-            _passwordText.setError("between 4 and 10 alphanumeric characters");
+            _passwordText.setError(getString(R.string.msg_error_password_characteres));
             valid = false;
         } else {
             _passwordText.setError(null);

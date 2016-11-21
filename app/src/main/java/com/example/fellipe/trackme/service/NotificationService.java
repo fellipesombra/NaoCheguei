@@ -23,7 +23,7 @@ public class NotificationService {
         this.context = context;
     }
 
-    public NotificationCompat.Builder createTimeLeftNotification(String title, String description){
+    public NotificationCompat.Builder createDefaultTextNotification(String title, String description){
 
         Intent resultIntent = new Intent(context, MainActivity.class);
         resultIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -49,4 +49,6 @@ public class NotificationService {
 
         return mBuilder;
     }
+
+
 }

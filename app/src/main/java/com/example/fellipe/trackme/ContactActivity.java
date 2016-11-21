@@ -24,6 +24,7 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.example.fellipe.trackme.dto.ContatoDTO;
 import com.example.fellipe.trackme.enums.RestResponseStatus;
+import com.example.fellipe.trackme.service.ContactService;
 import com.example.fellipe.trackme.util.MyListAdapter;
 import com.example.fellipe.trackme.util.rest.CustomRequest;
 import com.example.fellipe.trackme.util.rest.MySingleton;
@@ -54,15 +55,14 @@ public class ContactActivity extends AppCompatActivity {
     @InjectView(R.id.my_toolbar_contatos)
     Toolbar myToolbar;
 
+    ContactService contactService;
 
-    ArrayList<ContatoDTO> contactList = new ArrayList<>();
     private ArrayAdapter<ContatoDTO> listAdapter ;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_contact);
-
         ButterKnife.inject(this);
 
         setSupportActionBar(myToolbar);
@@ -74,43 +74,10 @@ public class ContactActivity extends AppCompatActivity {
             }
         });
 
-        listAdapter = new MyListAdapter(this, contactList);
-
-        getAllUserContacts();
-
+        listAdapter = new MyListAdapter(this);
         _listView.setAdapter(listAdapter);
 
-    }
-
-    private void getAllUserContacts() {
-        listAdapter.clear();
-        String url = "/"+ Session.getInstance().getUserId();
-        JsonArrayRequest jsObjRequest = new JsonArrayRequest( getString(R.string.contact_rest_url)+url,
-                new Response.Listener<JSONArray>() {
-                    @Override
-                    public void onResponse(JSONArray response) {
-                        try {
-                            for (int i = 0; i < response.length(); i++) {
-                                String email = (String) response.getJSONObject(i).get("email");
-                                String id = String.valueOf(response.getJSONObject(i).get("id"));
-                                listAdapter.add( new ContatoDTO(id, email));
-                            }
-                            listAdapter.notifyDataSetChanged();
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d("ContactActivity", "Erro na requisição REST.");
-                    }
-                }){
-        };
-
-
-        MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
+        contactService = new ContactService(this,listAdapter);
     }
 
     private void registerContact() {
@@ -131,40 +98,42 @@ public class ContactActivity extends AppCompatActivity {
                     public void onResponse(JSONObject response) {
                         try {
                             if(!response.isNull("status") && response.getInt("status") == RestResponseStatus.CONTACT_ADD.getStatusCode()) {
-                                Toast.makeText(getBaseContext(), "Contato adicionado", Toast.LENGTH_LONG).show();
-                                getAllUserContacts();
+                                contactService.updateContactList();
+                                Toast.makeText(getBaseContext(), R.string.msg_contact_add_success, Toast.LENGTH_LONG).show();
                             }else if(!response.isNull("status") && response.getInt("status") == RestResponseStatus.CONTACT_ALREADY_EXISTS.getStatusCode()){
-                                Toast.makeText(getBaseContext(), "Contato já existente", Toast.LENGTH_LONG).show();
+                                Toast.makeText(getBaseContext(), R.string.msg_contact_already_exists, Toast.LENGTH_LONG).show();
                             }else{
-                                Toast.makeText(getBaseContext(), "Erro no servidor. Tente novamente mais tarde", Toast.LENGTH_LONG).show();
+                                Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_LONG).show();
                             }
                         } catch (JSONException e) {
-                            Toast.makeText(getBaseContext(), "Erro no servidor. Tente novamente mais tarde", Toast.LENGTH_LONG).show();
+                            Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_LONG).show();
                         }
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        Toast.makeText(getBaseContext(), "Erro no servidor. Tente novamente mais tarde", Toast.LENGTH_LONG).show();
+                        Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_LONG).show();
                     }
                 }){
         };
-        jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(
-                0,
-                DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
-                DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 
         MySingleton.getInstance(this).addToRequestQueue(jsObjRequest);
     }
 
     public void logout(){
+
+        if(Session.getInstance().getTrip() != null){
+            //TODO CASO ESTEJA EM VIAGEM = POPUP AVISANDO QUE VAI TERMINAR A VIAGEM COM CONFIRMAÇÃO DO USUÁRIO
+        }
+
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.clear();
         editor.commit();
         Session.getInstance().setUserId(null);
         Session.getInstance().setTrip(null);
+        Session.getInstance().setContacts(null);
     }
 
     public void goToLoginPage(){

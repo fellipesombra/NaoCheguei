@@ -15,6 +15,7 @@ import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.Volley;
+import com.example.fellipe.trackme.service.ContactService;
 import com.example.fellipe.trackme.util.rest.CustomRequest;
 import com.example.fellipe.trackme.util.Session;
 
@@ -34,11 +35,15 @@ public class LoginActivity extends AppCompatActivity {
     @InjectView(R.id.input_password) EditText _passwordText;
     @InjectView(R.id.btn_login) Button _loginButton;
 
+    private ContactService contactService;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
         ButterKnife.inject(this);
+
+        contactService = new ContactService(this);
 
         _loginButton.setOnClickListener(new View.OnClickListener() {
 
@@ -56,7 +61,7 @@ public class LoginActivity extends AppCompatActivity {
 
     public void login() {
         if (!validate()) {
-            onLoginFailed("Validate your info!");
+            onLoginFailed(getString(R.string.msg_error_validate_infos));
             return;
         }
 
@@ -65,7 +70,7 @@ public class LoginActivity extends AppCompatActivity {
         final ProgressDialog progressDialog = new ProgressDialog(LoginActivity.this,
                 R.style.AppTheme_Dark_Dialog);
         progressDialog.setIndeterminate(true);
-        progressDialog.setMessage("Authenticating...");
+        progressDialog.setMessage("Contectando...");
         progressDialog.show();
 
         String email = _emailText.getText().toString();
@@ -88,9 +93,9 @@ public class LoginActivity extends AppCompatActivity {
                                 Session.getInstance().setUserId(userId);
                                 onLoginSuccess();
                             }else if (Integer.valueOf(userId) == 0){
-                                onLoginFailed("Password incorrect");
+                                onLoginFailed(getString(R.string.msg_error_password_incorrect));
                             }else{
-                                onLoginFailed("User not registered");
+                                onLoginFailed(getString(R.string.msg_error_user_not_registered));
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -100,7 +105,7 @@ public class LoginActivity extends AppCompatActivity {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        onLoginFailed("Server error. Try again later...");
+                        onLoginFailed(getString(R.string.msg_server_error));
                     }
                 }){
 
@@ -115,6 +120,7 @@ public class LoginActivity extends AppCompatActivity {
         if (requestCode == REQUEST_SIGNUP) {
             if (resultCode == RESULT_OK) {
                 addUserIdToSharedPrefs();
+                contactService.getAllUserContacts();
                 setResult(RESULT_OK, null);
                 this.finish();
             }
@@ -135,8 +141,9 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     public void onLoginSuccess() {
-        Toast.makeText(getBaseContext(), "Success", Toast.LENGTH_LONG).show();
+        Toast.makeText(getBaseContext(), "Bem vindo!", Toast.LENGTH_LONG).show();
         addUserIdToSharedPrefs();
+        contactService.getAllUserContacts();
         _loginButton.setEnabled(true);
         setResult(RESULT_OK, null);
         finish();
@@ -155,14 +162,14 @@ public class LoginActivity extends AppCompatActivity {
         String password = _passwordText.getText().toString();
 
         if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            _emailText.setError("enter a valid email address");
+            _emailText.setError(getString(R.string.msg_error_valid_email));
             valid = false;
         } else {
             _emailText.setError(null);
         }
 
         if (password.isEmpty() || password.length() < 4 || password.length() > 10) {
-            _passwordText.setError("between 4 and 10 alphanumeric characters");
+            _passwordText.setError(getString(R.string.msg_error_password_characteres));
             valid = false;
         } else {
             _passwordText.setError(null);

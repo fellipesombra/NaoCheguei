@@ -1,7 +1,9 @@
 package com.example.fellipe.trackme;
 
+import android.app.Dialog;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -13,9 +15,9 @@ import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -91,6 +93,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @InjectView(R.id.my_toolbar)
     Toolbar myToolbar;
 
+    int mNotificationId = 001;
+
     private GoogleMap mMap;
 
     private Handler handler;
@@ -116,10 +120,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void handleMessage(Message msg) {
                 if(msg.what == HandlerMessagesCode.TIME_FINISHED.getCode()) {
                     endTripSuccess();
+                    notifyUserAboutTrip(getString(R.string.notification_title_time_finished), getString(R.string.notification_desc_time_finished));
                 }else if(msg.what == HandlerMessagesCode.ARRIVED_AT_DESTIONATION.getCode()){
                     endTripImpl();
+                    notifyUserAboutTrip(getString(R.string.notification_title_arrived_destination), getString(R.string.notification_desc_arrived_destination));
                 }else if(msg.what == HandlerMessagesCode.X_MINUTES_LEFT.getCode()){
-                    notifyAboutEndingTrip();
+                    notifyUserAboutTrip(getString(R.string.notification_title_5_min), getString(R.string.notification_desc_5_min));
                 }
             }
         };
@@ -172,8 +178,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mMap.clear();
                 mapService.clear();
                 activeDestination = null;
-                // TODO: Handle the error.
-                Log.i(TAG, "An error occurred: " + status);
+                Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -187,7 +192,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void logout(){
 
-        //TODO CASO ESTEJA EM VIAGEM = POPUP AVISANDO QUE VAI TERMINAR A VIAGEM COM CONFIRMAÇÃO DO USUÁRIO
+        if(Session.getInstance().getTrip() != null){
+            //TODO CASO ESTEJA EM VIAGEM = POPUP AVISANDO QUE VAI TERMINAR A VIAGEM COM CONFIRMAÇÃO DO USUÁRIO
+        }
 
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
@@ -195,6 +202,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         editor.apply();
         Session.getInstance().setUserId(null);
         Session.getInstance().setTrip(null);
+        Session.getInstance().setContacts(null);
     }
 
     public void goToLoginPage(){
@@ -207,12 +215,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         startActivity(intent);
     }
 
-    private void notifyAboutEndingTrip() {
-        NotificationCompat.Builder mBuilder = notificationService.createTimeLeftNotification("Faltam 5 minutos para acabar o tempo!", "Adicione mais tempo a viagem, caso seja necessário.");
-        int mNotificationId = 001;
+    private void notifyUserAboutTrip(String title, String descrition) {
+        NotificationCompat.Builder mBuilder = notificationService.createDefaultTextNotification(title, descrition);
         NotificationManager mNotifyMgr =
                 (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
         mNotifyMgr.notify(mNotificationId, mBuilder.build());
+        mNotificationId++;
     }
 
     @Override
@@ -284,14 +292,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 returnToActiveTrip(trip);
                             }
                         } catch (JSONException e) {
-                            e.printStackTrace();
+                            Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_SHORT).show();
                         }
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        //erro ao recuperar viagem
+                        Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_SHORT).show();
                     }
                 }){
         };
@@ -303,6 +311,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return (int) (endTime - (new Date()).getTime())/1000;
     }
 
+    private Dialog buildAddContactDialog(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle(R.string.dialog_title_no_contacts)
+                .setMessage(R.string.dialog_msg_no_contacts)
+                .setPositiveButton(R.string.msg_ok,new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        goToContactPage();
+                    }
+                });
+        return builder.create();
+    }
 
     public void startTrip(View view) {
         _startTripButton.setEnabled(false);
@@ -316,6 +335,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }else if(!location.hasLocationEnabled()){
             Toast.makeText(getBaseContext(), "Ative o GPS para iniciar a viagem!", Toast.LENGTH_SHORT).show();
             SimpleLocation.openSettings(this);
+            hasError = true;
+        }else if(Session.getInstance().getContacts().isEmpty()){
+            buildAddContactDialog().show();
             hasError = true;
         }
 
@@ -338,7 +360,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 TripInfo trip = new TripInfo(String.valueOf(response.get("id")), activeDestination, mapService.getActualEstimatedTime());
                                 Session.getInstance().setTrip(trip);
                             } catch (JSONException e) {
-                                e.printStackTrace();
+                                Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_SHORT).show();
                             }
                             startTripSuccess();
                         }else{
@@ -408,7 +430,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     new Response.ErrorListener() {
                         @Override
                         public void onErrorResponse(VolleyError error) {
-                            Toast.makeText(MainActivity.this, "Erro de conexão! Tente de novo mais tarde...", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_SHORT).show();
                             _addTimeButton.setEnabled(true);
                         }
                     }){
@@ -424,13 +446,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         updateStartTripButton();
 
+        mapService.setCurrentDestination(activeDestination);
         location.beginUpdates();
         locationTracker = new LocationTracker(location,handler,this,mapService,_timeText);
         handler.postDelayed(locationTracker, 0);
     }
 
     private void startTripFail() {
-        Toast.makeText(this, "Error!", Toast.LENGTH_LONG).show();
+        Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_SHORT).show();
         _startTripButton.setEnabled(true);
     }
 
@@ -454,7 +477,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void endTripFail() {
-        Toast.makeText(this, "Error!", Toast.LENGTH_LONG).show();
+        Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_SHORT).show();
         _endTripButton.setEnabled(true);
     }
 
@@ -561,6 +584,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-        Toast.makeText(getBaseContext(), "Falha na conexão!", Toast.LENGTH_LONG).show();
+        Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_SHORT).show();
     }
 }

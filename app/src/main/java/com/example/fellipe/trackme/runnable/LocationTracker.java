@@ -40,7 +40,6 @@ public class LocationTracker implements Runnable{
     private TextView timeText;
     private Handler handler;
     private Context context;
-    private Message message;
 
 
     public LocationTracker(SimpleLocation location, Handler handler, Context context, MapService mapService, TextView timeText) {
@@ -49,7 +48,6 @@ public class LocationTracker implements Runnable{
         this.context = context;
         this.mapService = mapService;
         this.timeText = timeText;
-        message = new Message();
     }
 
     @Override
@@ -65,16 +63,19 @@ public class LocationTracker implements Runnable{
             timeText.setText(mapService.getActualEstimatedTimeText());
 
             if(mapService.getActualEstimatedTime() == 300){
-                message.what = HandlerMessagesCode.X_MINUTES_LEFT.getCode();
-                handler.sendMessage(message);
+                Message message1 = new Message();
+                message1.what = HandlerMessagesCode.X_MINUTES_LEFT.getCode();
+                handler.sendMessage(message1);
             }
 
             if(secondsCounter == 60 && isInDestinationRadius()){
-                message.what = HandlerMessagesCode.ARRIVED_AT_DESTIONATION.getCode();
-                handler.sendMessage(message);
+                Message message2 = new Message();
+                message2.what = HandlerMessagesCode.ARRIVED_AT_DESTIONATION.getCode();
+                handler.sendMessage(message2);
             }else if(mapService.getActualEstimatedTime() < 1 ){
-                message.what = HandlerMessagesCode.TIME_FINISHED.getCode();
-                handler.sendMessage(message);
+                Message message3 = new Message();
+                message3.what = HandlerMessagesCode.TIME_FINISHED.getCode();
+                handler.sendMessage(message3);
             }else {
                 handler.postDelayed(this, 1000);
             }
@@ -87,10 +88,13 @@ public class LocationTracker implements Runnable{
 
         boolean isInRadiusOfDestionation = false;
 
-        double radius = 0.1; //100m
+        double radius = 0.05; //50m
 
-        double lat = location.getLatitude();
-        double lng = location.getLongitude();
+        double curLat = location.getLatitude();
+        double curLng = location.getLongitude();
+
+        double lat = mapService.getCurrentDestination().latitude;
+        double lng = mapService.getCurrentDestination().longitude;
 
         double latDelta = radius/110.54;
         double longDelta = radius/(111.320*Math.cos(Math.toDegrees(lat)));
@@ -100,7 +104,7 @@ public class LocationTracker implements Runnable{
         double lat2 = lat - latDelta;
         double lng2 = lng - longDelta;
 
-        if(lat < lat1 && lat > lat2 && lng < lng1 && lng > lng2){
+        if(curLat < lat1 && curLat > lat2 && curLng < lng1 && curLng > lng2){
             isInRadiusOfDestionation = true;
         }
         return isInRadiusOfDestionation;

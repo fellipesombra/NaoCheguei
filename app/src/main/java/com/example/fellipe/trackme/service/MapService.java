@@ -39,6 +39,7 @@ public class MapService {
 
     private Map<String,Integer> estimatedTimes = new HashMap<>();
     private int actualEstimatedTime;
+    private LatLng currentDestination;
 
     public MapService(String distanceMatrixKey, Context context, SimpleLocation location){
         this.distanceMatrixKey = distanceMatrixKey;
@@ -120,10 +121,18 @@ public class MapService {
 
     public void clear() {
         actualEstimatedTime = 0;
+        currentDestination = null;
         estimatedTimes.put(TransportType.BICYCLING.getName(),0);
         estimatedTimes.put(TransportType.DRIVING.getName(),0);
         estimatedTimes.put(TransportType.WALKING.getName(),0);
         estimatedTimes.put(TransportType.PUBLIC_TRANSPORT.getName(),0);
     }
 
+    public void setCurrentDestination(LatLng currentDestination) {
+        this.currentDestination = currentDestination;
+    }
+
+    public LatLng getCurrentDestination() {
+        return currentDestination;
+    }
 }

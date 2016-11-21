@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
+import com.example.fellipe.trackme.service.ContactService;
 import com.example.fellipe.trackme.util.Session;
 
 /**
@@ -16,17 +17,21 @@ public class IntroActivity extends AppCompatActivity {
 
     private static final int REQUEST_LOGIN = 0;
 
+    private ContactService contactService;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_intro);
+
+        contactService = new ContactService(this);
 
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         String userId = sharedPref.getString(getString(R.string.user_id), null);
 
         if(userId != null) {
             Session.getInstance().setUserId(userId);
+            contactService.getAllUserContacts();
             Intent mainActivity = new Intent(this, MainActivity.class);
             startActivity(mainActivity);
         }else{

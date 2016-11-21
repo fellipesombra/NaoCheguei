@@ -29,4 +29,27 @@
     <string name="title_activity_maps">Viagem</string>
     <string name="title_activity_intro">Intro</string>
     <string name="viagem">viagem</string>
+    <string name="dialog_msg_del_contact">Deseja excluir o contato</string>
+    <string name="erase">Apagar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="msg_server_error">Erro de conexão com o servidor. Tente novamente mais tarde.</string>
+    <string name="msg_contact_deleted">Contato removido</string>
+    <string name="msg_contact_already_exists">Contato já existente</string>
+    <string name="msg_contact_add_success">Contato adicionado</string>
+    <string name="dialog_title_no_contacts">Você ainda não possui contatos!</string>
+    <string name="dialog_msg_no_contacts">Adicione os emails dos seus contatos confiáveis antes de começar uma viagem.</string>
+    <string name="msg_ok">Adicionar</string>
+    <string name="msg_error_name_characteres">No mínimo 3 caracteres.</string>
+    <string name="msg_error_valid_email">Entre um e-mail válido.</string>
+    <string name="msg_error_password_characteres">Entre 4 e 10 caracteres alfanuméricos.</string>
+    <string name="msg_error_email_already_exists">E-mail já está em uso!</string>
+    <string name="msg_error_validate_infos">Valide suas informações!</string>
+    <string name="msg_error_password_incorrect">Senha incorreta!</string>
+    <string name="msg_error_user_not_registered">Usuário não registrado.</string>
+    <string name="notification_title_5_min">Faltam 5 minutos para acabar o tempo!</string>
+    <string name="notification_desc_5_min">Adicione mais tempo a viagem, caso seja necessário.</string>
+    <string name="notification_title_time_finished">O tempo de sua viagem acabou!</string>
+    <string name="notification_desc_time_finished">Como você não chegou a seu destino no tempo estimado estamos enviando um e-mail avisando seus contatos.</string>
+    <string name="notification_title_arrived_destination">Você chegou ao seu destino!</string>
+    <string name="notification_desc_arrived_destination">Sua viagem foi encerrada.</string>
 </resources>
