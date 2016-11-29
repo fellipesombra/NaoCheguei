@@ -35,126 +35,133 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/appBottomBar"
-        android:background="@null"
+        android:background="@color/white"
         android:layout_alignParentBottom="true"
         android:layout_alignParentStart="true"
-        android:padding="5dp">
-
-        <android.support.v7.widget.CardView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="2"
-            app:contentPadding="@dimen/cardview_default_elevation"
-            android:id="@+id/estimatedTimeCard"
-            android:layout_gravity="center">
-
-            <LinearLayout
-                android:orientation="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:layout_weight="1">
-
-                <LinearLayout
-                    android:orientation="horizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1">
-
-                    <ImageButton
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:srcCompat="@drawable/walking_32"
-                        android:background="@null"
-                        android:id="@+id/btn_walking"
-                        android:layout_weight="1"
-                        android:scaleType="fitCenter"
-                        android:onClick="changeToWalk"/>
-
-                    <ImageButton
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:srcCompat="@drawable/car_32"
-                        android:background="@null"
-                        android:id="@+id/btn_car"
-                        android:layout_weight="1"
-                        android:scaleType="fitCenter"
-                        android:onClick="changeToCar" />
-
-                    <ImageButton
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:srcCompat="@drawable/bus_32"
-                        android:id="@+id/btn_bus"
-                        android:background="@null"
-                        android:layout_weight="1"
-                        android:scaleType="fitCenter"
-                        android:onClick="changeToBus" />
-
-                    <ImageButton
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        app:srcCompat="@drawable/bicycle_32"
-                        android:background="@null"
-                        android:id="@+id/btn_bike"
-                        android:layout_weight="1"
-                        android:scaleType="fitCenter"
-                        android:onClick="changeToBike" />
-
-                </LinearLayout>
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="none"
-                    android:id="@+id/estimatedTimeText"
-                    android:gravity="center"
-                    android:text="-"
-                    android:layout_weight="1"
-                    android:textColor="#8a8a8a"
-                    android:textSize="30sp" />
-
-            </LinearLayout>
-
-        </android.support.v7.widget.CardView>
-
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:srcCompat="@drawable/btn_add_tempo_64"
-            android:background="@null"
-            android:layout_gravity="bottom"
-            android:id="@+id/btn_add_tempo"
-            android:onClick="addTime"
-            android:layout_weight="1"
-            android:elevation="2dp"
-            android:layout_marginLeft="5dp" />
+        android:elevation="10dp">
 
         <LinearLayout
             android:orientation="vertical"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:padding="5dp"
-            android:layout_weight="2"
-            android:elevation="2dp">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-            <ImageButton
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:srcCompat="@drawable/btn_iniciar_128"
-                android:background="@null"
-                android:id="@+id/btn_iniciar_viagem"
-                android:onClick="startTrip"/>
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@color/primary">
 
-            <ImageButton
-                android:layout_width="wrap_content"
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    app:srcCompat="@drawable/walk_32"
+                    android:background="@null"
+                    android:id="@+id/btn_walking"
+                    android:layout_weight="1"
+                    android:scaleType="fitCenter"
+                    android:onClick="changeToWalk"
+                    android:adjustViewBounds="false"
+                    android:elevation="4dp" />
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    app:srcCompat="@drawable/car_selected_32"
+                    android:background="@color/white"
+                    android:id="@+id/btn_car"
+                    android:layout_weight="1"
+                    android:scaleType="fitCenter"
+                    android:onClick="changeToCar"
+                    android:adjustViewBounds="false"
+                    android:elevation="4dp" />
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    app:srcCompat="@drawable/bus_32"
+                    android:id="@+id/btn_bus"
+                    android:background="@null"
+                    android:layout_weight="1"
+                    android:scaleType="fitCenter"
+                    android:onClick="changeToBus"
+                    android:adjustViewBounds="false"
+                    android:elevation="4dp" />
+
+                <ImageButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="match_parent"
+                    app:srcCompat="@drawable/bike_32"
+                    android:background="@null"
+                    android:id="@+id/btn_bike"
+                    android:layout_weight="1"
+                    android:scaleType="fitCenter"
+                    android:onClick="changeToBike"
+                    android:adjustViewBounds="false"
+                    android:elevation="4dp" />
+
+            </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:srcCompat="@drawable/btn_finalizar_128"
-                android:background="@null"
-                android:id="@+id/btn_finalizar_viagem"
-                android:onClick="endTrip"
-                android:visibility="gone"/>
+                android:inputType="none"
+                android:id="@+id/estimatedTimeText"
+                android:gravity="center"
+                android:textColor="#8a8a8a"
+                android:textSize="36sp"
+                android:paddingTop="10dp" />
+
+
+            <LinearLayout
+                android:orientation="horizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="5dp"
+                android:elevation="2dp">
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btn_add_tempo"
+                    android:onClick="addTime"
+                    android:elevation="2dp"
+                    android:layout_weight="1"
+                    android:layout_marginRight="15dp"
+                    android:text="Adicionar 30mins"
+                    android:textSize="14sp"
+                    android:backgroundTint="#FDD835"
+                    android:textAllCaps="false" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btn_iniciar_viagem"
+                    android:onClick="startTrip"
+                    android:elevation="2dp"
+                    android:layout_gravity="right"
+                    android:layout_weight="1"
+                    android:layout_marginLeft="15dp"
+                    android:text="Iniciar viagem"
+                    android:textAllCaps="false"
+                    android:backgroundTint="#8BC34A" />
+
+                <Button
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/btn_finalizar_viagem"
+                    android:onClick="endTrip"
+                    android:elevation="2dp"
+                    android:layout_gravity="right"
+                    android:visibility="gone"
+                    android:layout_marginLeft="15dp"
+                    android:text="Finalizar viagem"
+                    android:textAllCaps="false" />
+
+            </LinearLayout>
 
         </LinearLayout>
+
 
     </LinearLayout>
 

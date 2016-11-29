@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.location.Location;
 import android.location.LocationListener;
 import android.os.Bundle;
@@ -22,6 +23,7 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -84,11 +86,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     ImageButton _walkingButton;
 
     @InjectView(R.id.btn_iniciar_viagem)
-    ImageButton _startTripButton;
+    Button _startTripButton;
     @InjectView(R.id.btn_finalizar_viagem)
-    ImageButton _endTripButton;
+    Button _endTripButton;
     @InjectView(R.id.btn_add_tempo)
-    ImageButton _addTimeButton;
+    Button _addTimeButton;
 
     @InjectView(R.id.my_toolbar)
     Toolbar myToolbar;
@@ -258,7 +260,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void defaultTripConfigurations(){
         mapService.changeTransportType(TransportType.DRIVING);
         activeTransportType = TransportType.DRIVING;
-        _carButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
         updateEstimatedTimeText();
     }
 
@@ -412,9 +413,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         _addTimeButton.setEnabled(false);
         if(activeDestination == null){
             Toast.makeText(this, "Selecione um destino primeiro!", Toast.LENGTH_LONG).show();
+            _addTimeButton.setEnabled(true);
         }else if(!isTripActive()){
             mapService.addActualEstimatedTime(1800);
             updateEstimatedTimeText();
+            _addTimeButton.setEnabled(true);
         }else{// em viagem
             String extra = "/trip/delay/"+Session.getInstance().getTrip().getTripId();
 
@@ -490,7 +493,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapService.changeTransportType(activeTransportType);
 
         clearImageButtonBackGrounds();
-        _carButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
+        _carButton.setBackgroundColor(Color.WHITE);
+        _carButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.car_selected_32));
         updateEstimatedTimeText();
     }
 
@@ -502,7 +506,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapService.changeTransportType(activeTransportType);
 
         clearImageButtonBackGrounds();
-        _busButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
+        _busButton.setBackgroundColor(Color.WHITE);
+        _busButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.bus_selected_32));
         updateEstimatedTimeText();
     }
 
@@ -514,7 +519,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapService.changeTransportType(activeTransportType);
 
         clearImageButtonBackGrounds();
-        _walkingButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
+        _walkingButton.setBackgroundColor(Color.WHITE);
+        _walkingButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.walk_selected_32));
         updateEstimatedTimeText();
     }
 
@@ -526,15 +532,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapService.changeTransportType(activeTransportType);
 
         clearImageButtonBackGrounds();
-        _bikeButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border));
+        _bikeButton.setBackgroundColor(Color.WHITE);
+        _bikeButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.bike_selected_32));
         updateEstimatedTimeText();
     }
 
     private void clearImageButtonBackGrounds() {
-        _busButton.setBackground(null);
-        _carButton.setBackground(null);
-        _walkingButton.setBackground(null);
-        _bikeButton.setBackground(null);
+        _busButton.setBackgroundColor(Color.TRANSPARENT);
+        _carButton.setBackgroundColor(Color.TRANSPARENT);
+        _walkingButton.setBackgroundColor(Color.TRANSPARENT);
+        _bikeButton.setBackgroundColor(Color.TRANSPARENT);
+
+        _busButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.bus_32));
+        _carButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.car_32));
+        _walkingButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.walk_32));
+        _bikeButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.bike_32));
     }
     private void updateEstimatedTimeText() {
         _timeText.setText(mapService.getActualEstimatedTimeText());
