@@ -25,7 +25,7 @@
         </activity>
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_name"
+            android:label="@string/viagem"
             android:launchMode="singleTask"
             android:theme="@style/AppTheme.Dark">
         </activity>

@@ -9,9 +9,9 @@
     <string name="user_id">userid</string>
     <string name="trip_id">tripid</string>
 
-    <string name="map_rest_url">http://192.168.1.2:8080/onmyway-service/rest/map</string>
-    <string name="contact_rest_url">http://192.168.1.2:8080/onmyway-service/rest/contact</string>
-    <string name="user_rest_url">http://192.168.1.2:8080/onmyway-service/rest/user</string>
+    <string name="map_rest_url">http://naocheguei-srv.herokuapp.com/rest/map</string>
+    <string name="contact_rest_url">http://naocheguei-srv.herokuapp.com/rest/contact</string>
+    <string name="user_rest_url">http://naocheguei-srv.herokuapp.com/rest/user</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>
@@ -28,7 +28,7 @@
     <string name="title_activity_login2">Login</string>
     <string name="title_activity_maps">Viagem</string>
     <string name="title_activity_intro">Intro</string>
-    <string name="viagem">viagem</string>
+    <string name="viagem">Viagem</string>
     <string name="dialog_msg_del_contact">Deseja excluir o contato</string>
     <string name="erase">Apagar</string>
     <string name="cancel">Cancelar</string>

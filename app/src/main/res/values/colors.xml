@@ -4,11 +4,13 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
 
-
-    <color name="primary">#E43F3F</color>
-    <color name="primary_dark">#E12929</color>
-    <color name="primary_darker">#CC1D1D</color>
+<!--    E43F3F -->
+    <color name="primary">#222222</color>
+    <color name="primary_dark">#000000</color>
+    <color name="primary_darker">#000000</color>
     <color name="accent">#FFFFFF</color>
+
+    <color name="dark_red">#CC1D1D</color>
 
     <color name="black">#000000</color>
     <color name="jet">#222222</color>

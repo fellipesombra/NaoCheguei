@@ -53,9 +53,10 @@
 
     <ListView
         android:id="@+id/list"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_width="match_parent"
-        android:layout_below="@+id/appTopBarContatos">
+        android:layout_below="@+id/appTopBarContatos"
+        android:background="@color/white">
     </ListView>
 
 </RelativeLayout>
