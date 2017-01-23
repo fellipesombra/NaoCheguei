@@ -118,7 +118,7 @@
                 android:elevation="2dp">
 
                 <Button
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:id="@+id/btn_add_tempo"
                     android:onClick="addTime"
@@ -131,7 +131,7 @@
                     android:textAllCaps="false" />
 
                 <Button
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:id="@+id/btn_iniciar_viagem"
                     android:onClick="startTrip"
@@ -144,7 +144,7 @@
                     android:backgroundTint="#8BC34A" />
 
                 <Button
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:id="@+id/btn_finalizar_viagem"
                     android:onClick="endTrip"

@@ -1,7 +1,10 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools" tools:context=".ContactActivity">
     <item android:id="@+id/viagem"
-        android:title="@string/viagem"/>
+        android:title="@string/viagem"
+        android:icon="@android:drawable/ic_dialog_map"
+        app:showAsAction="always"/>
     <item android:id="@+id/logout"
         android:title="@string/logout"/>
 </menu>

@@ -45,7 +45,8 @@
                 app:backgroundTint="@android:color/white"
                 android:layout_gravity="right"
                 app:elevation="0dp"
-                android:onClick="registerContact"/>
+                android:onClick="registerContact"
+                android:layout_marginRight="6dp" />
 
         </LinearLayout>
 

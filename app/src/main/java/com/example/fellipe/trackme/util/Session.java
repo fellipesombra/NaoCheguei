@@ -13,6 +13,9 @@ public class Session {
     private static Session ourInstance = new Session();
 
     public static Session getInstance() {
+        if (ourInstance == null){
+            ourInstance = new Session();
+        }
         return ourInstance;
     }
 
