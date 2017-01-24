@@ -11,14 +11,11 @@ import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonArrayRequest;
 import com.example.fellipe.trackme.service.ContactService;
 import com.example.fellipe.trackme.util.Session;
 import com.example.fellipe.trackme.util.rest.CustomRequest;
 import com.example.fellipe.trackme.util.rest.MySingleton;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 /**

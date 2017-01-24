@@ -53,4 +53,9 @@
     <string name="notification_desc_time_finished">Como você não chegou a seu destino no tempo estimado estamos enviando um e-mail avisando seus contatos.</string>
     <string name="notification_title_arrived_destination">Você chegou ao seu destino!</string>
     <string name="notification_desc_arrived_destination">Sua viagem foi encerrada.</string>
+    <string name="msg_location_permission_necessary">Permissão de localização é necessária!</string>
+    <string name="msg_error_add_destiny">Adicione um destino!</string>
+    <string name="msg_error_select_transport_type">Selecione o meio de transporte!</string>
+    <string name="msg_error_add_estimated_time">Adicione uma estimativa de tempo!</string>
+    <string name="msg_error_activate_gps">Ative o GPS para iniciar a viagem!</string>
 </resources>

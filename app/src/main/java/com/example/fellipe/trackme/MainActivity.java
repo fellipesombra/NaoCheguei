@@ -1,5 +1,6 @@
 package com.example.fellipe.trackme;
 
+import android.Manifest;
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.content.Context;
@@ -14,6 +15,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
@@ -72,7 +74,7 @@ import im.delight.android.location.SimpleLocation;
  */
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleApiClient.OnConnectionFailedListener {
 
-    private static final String TAG = "MAINACTIVITY";
+    private static final int MY_LOCATION_PERMISSION_REQUEST = 1;
 
     @InjectView(R.id.estimatedTimeText)
     TextView _timeText;
@@ -141,11 +143,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setSupportActionBar(myToolbar);
 
         instantiateMap();
-        defaultTripConfigurations();
+        //defaultTripConfigurations();
         checkAtiveTrip();
         updateStartTripButton();
 
     }
+
 
     private void instantiateMap() {
         mapService = new MapService(getResources().getString(R.string.google_distance_matrix_key), this, location);
@@ -156,6 +159,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         PlaceAutocompleteFragment autocompleteFragment = (PlaceAutocompleteFragment)
                 getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
+
+        autocompleteFragment.setHint("Adicionar destino");
 
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
@@ -171,8 +176,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
                 activeDestination = place.getLatLng();
-                mapService.changeTransportType(activeTransportType);
-                updateEstimatedTimeText();
+                //mapService.changeTransportType(activeTransportType);
+                //updateEstimatedTimeText();
             }
 
             @Override
@@ -327,14 +332,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void startTrip(View view) {
         _startTripButton.setEnabled(false);
         boolean hasError = false;
-        if(activeDestination == null){
-            Toast.makeText(getBaseContext(), "Adicione um destino!", Toast.LENGTH_SHORT).show();
+        if(activeDestination == null) {
+            Toast.makeText(getBaseContext(), R.string.msg_error_add_destiny, Toast.LENGTH_SHORT).show();
+            hasError = true;
+        }else if(activeTransportType == null){
+            Toast.makeText(getBaseContext(), R.string.msg_error_select_transport_type, Toast.LENGTH_SHORT).show();
             hasError = true;
         }else if(mapService.getActualEstimatedTime() == 0) {
-            Toast.makeText(getBaseContext(), "Adicione uma estimativa de tempo!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getBaseContext(), R.string.msg_error_add_estimated_time, Toast.LENGTH_SHORT).show();
             hasError = true;
         }else if(!location.hasLocationEnabled()){
-            Toast.makeText(getBaseContext(), "Ative o GPS para iniciar a viagem!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getBaseContext(), R.string.msg_error_activate_gps, Toast.LENGTH_SHORT).show();
             SimpleLocation.openSettings(this);
             hasError = true;
         }else if(Session.getInstance().getContacts().isEmpty()){
@@ -494,6 +502,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         clearImageButtonBackGrounds();
         _carButton.setBackgroundColor(Color.WHITE);
+        _carButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border_top));
         _carButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.car_selected_32));
         updateEstimatedTimeText();
     }
@@ -507,6 +516,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         clearImageButtonBackGrounds();
         _busButton.setBackgroundColor(Color.WHITE);
+        _busButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border_top));
         _busButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.bus_selected_32));
         updateEstimatedTimeText();
     }
@@ -520,6 +530,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         clearImageButtonBackGrounds();
         _walkingButton.setBackgroundColor(Color.WHITE);
+        _walkingButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border_top));
         _walkingButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.walk_selected_32));
         updateEstimatedTimeText();
     }
@@ -533,11 +544,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         clearImageButtonBackGrounds();
         _bikeButton.setBackgroundColor(Color.WHITE);
+        _bikeButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border_top));
         _bikeButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.bike_selected_32));
         updateEstimatedTimeText();
     }
 
     private void clearImageButtonBackGrounds() {
+
+        _busButton.setBackground(null);
+        _carButton.setBackground(null);
+        _walkingButton.setBackground(null);
+        _bikeButton.setBackground(null);
+
         _busButton.setBackgroundColor(Color.TRANSPARENT);
         _carButton.setBackgroundColor(Color.TRANSPARENT);
         _walkingButton.setBackgroundColor(Color.TRANSPARENT);
@@ -561,15 +579,36 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
-           centerMapUserLocation();
+            centerMapUserLocation();
         } else {
-            Toast.makeText(getBaseContext(), "Permissão de localização é necessária!", Toast.LENGTH_LONG).show();
+            requestLocationPermission();
         }
 
         //mMap.moveCamera(CameraUpdateFactory.newLatLng(curLocation));
+    }
+
+    private void requestLocationPermission(){
+        ActivityCompat.requestPermissions(this,
+                new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION},
+                MY_LOCATION_PERMISSION_REQUEST);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_LOCATION_PERMISSION_REQUEST: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                } else {
+                    Toast.makeText(getBaseContext(), R.string.msg_location_permission_necessary, Toast.LENGTH_LONG).show();
+                }
+                return;
+            }
+        }
     }
 
     @Override
