@@ -133,7 +133,7 @@ public class ContactActivity extends AppCompatActivity {
         editor.commit();
         Session.getInstance().setUserId(null);
         Session.getInstance().setTrip(null);
-        Session.getInstance().setContacts(null);
+        Session.getInstance().getContacts().clear();
     }
 
     public void goToLoginPage(){

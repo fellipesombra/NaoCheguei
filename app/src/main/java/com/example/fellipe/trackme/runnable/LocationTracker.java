@@ -68,7 +68,7 @@ public class LocationTracker implements Runnable{
                 handler.sendMessage(message1);
             }
 
-            if(secondsCounter == 60 && isInDestinationRadius()){
+            if((secondsCounter == 61 || secondsCounter == 1) && isInDestinationRadius()){
                 Message message2 = new Message();
                 message2.what = HandlerMessagesCode.ARRIVED_AT_DESTIONATION.getCode();
                 handler.sendMessage(message2);
@@ -131,7 +131,7 @@ public class LocationTracker implements Runnable{
                 }){
         };
         jsObjRequest.setRetryPolicy(new DefaultRetryPolicy(
-                0,
+                DefaultRetryPolicy.DEFAULT_TIMEOUT_MS*2,
                 DefaultRetryPolicy.DEFAULT_MAX_RETRIES,
                 DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
 

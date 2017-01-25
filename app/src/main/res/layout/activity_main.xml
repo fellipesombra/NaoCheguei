@@ -125,7 +125,7 @@
                     android:elevation="2dp"
                     android:layout_weight="1"
                     android:layout_marginRight="15dp"
-                    android:text="Adicionar 30mins"
+                    android:text="Adicionar 15mins"
                     android:textSize="14sp"
                     android:backgroundTint="#FDD835"
                     android:textAllCaps="false" />

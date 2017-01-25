@@ -1,6 +1,5 @@
 package com.example.fellipe.trackme;
 
-import android.Manifest;
 import android.app.Dialog;
 import android.app.NotificationManager;
 import android.content.Context;
@@ -47,6 +46,7 @@ import com.example.fellipe.trackme.util.rest.MySingleton;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.places.AutocompleteFilter;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.ui.PlaceAutocompleteFragment;
 import com.google.android.gms.location.places.ui.PlaceSelectionListener;
@@ -68,6 +68,8 @@ import java.util.Map;
 import butterknife.ButterKnife;
 import butterknife.InjectView;
 import im.delight.android.location.SimpleLocation;
+
+import static com.example.fellipe.trackme.enums.TransportType.BICYCLING;
 
 /**
  * Created by Fellipe on 28/07/2016.
@@ -135,17 +137,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         };
 
         location = new SimpleLocation(this);
-        if (!location.hasLocationEnabled()) {
-            // habilitar o gps
-            SimpleLocation.openSettings(this);
-        }
 
         setSupportActionBar(myToolbar);
 
         instantiateMap();
-        //defaultTripConfigurations();
         checkAtiveTrip();
         updateStartTripButton();
+
 
     }
 
@@ -161,7 +159,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 getFragmentManager().findFragmentById(R.id.place_autocomplete_fragment);
 
         autocompleteFragment.setHint("Adicionar destino");
-
+        //especifica a busca no maps para endereços aqui do Brasil
+        AutocompleteFilter typeFilter = new AutocompleteFilter.Builder()
+                .setCountry("BR")
+                .build();
+        autocompleteFragment.setFilter(typeFilter);
         autocompleteFragment.setOnPlaceSelectedListener(new PlaceSelectionListener() {
             @Override
             public void onPlaceSelected(Place place) {
@@ -176,8 +178,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
                 activeDestination = place.getLatLng();
-                //mapService.changeTransportType(activeTransportType);
-                //updateEstimatedTimeText();
             }
 
             @Override
@@ -203,13 +203,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             //TODO CASO ESTEJA EM VIAGEM = POPUP AVISANDO QUE VAI TERMINAR A VIAGEM COM CONFIRMAÇÃO DO USUÁRIO
         }
 
+        activeDestination = null;
+        activeTransportType = null;
+        clearImageButtonBackGrounds();
+
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
         editor.clear();
         editor.apply();
         Session.getInstance().setUserId(null);
         Session.getInstance().setTrip(null);
-        Session.getInstance().setContacts(null);
+        Session.getInstance().getContacts().clear();
     }
 
     public void goToLoginPage(){
@@ -262,20 +266,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    private void defaultTripConfigurations(){
-        mapService.changeTransportType(TransportType.DRIVING);
-        activeTransportType = TransportType.DRIVING;
-        updateEstimatedTimeText();
-    }
-
     private void returnToActiveTrip(TripInfo trip){
         activeDestination = new LatLng(trip.getLatLng().latitude, trip.getLatLng().longitude);
+        activeTransportType = trip.getTransportType();
+        transportButtonSelected(activeTransportType);
         mapService.setActualEstimatedTime(trip.getEstimatedTime());
         mMap.addMarker(new MarkerOptions().position(trip.getLatLng()));
         CameraUpdate cameraUpdate = CameraUpdateFactory.newLatLngZoom(trip.getLatLng(), 15);
         mMap.animateCamera(cameraUpdate);
         updateEstimatedTimeText();
         startTripSuccess();
+    }
+
+    private void transportButtonSelected(TransportType activeTransportType) {
+        switch (activeTransportType){
+            case WALKING:
+                transportSelected(_walkingButton,R.drawable.walk_selected_32);
+                break;
+            case DRIVING:
+                transportSelected(_carButton,R.drawable.car_selected_32);
+                break;
+            case BICYCLING:
+                transportSelected(_bikeButton,R.drawable.bike_selected_32);
+                break;
+            case PUBLIC_TRANSPORT:
+                transportSelected(_busButton,R.drawable.bus_selected_32);
+                break;
+            default:
+                break;
+        }
     }
 
     private void checkAtiveTrip() {
@@ -292,8 +311,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 double lat = tripJSON.getDouble("latitude");
                                 double lng = tripJSON.getDouble("longitude");
                                 long endTime = tripJSON.getLong("endTime");
+                                String transport = (tripJSON.getString("transport"));
                                 int estimatedTime = calculateEstimatedTimeToDate(endTime);
-                                TripInfo trip = new TripInfo(tripId, new LatLng(lat,lng),estimatedTime);
+                                TripInfo trip = new TripInfo(tripId, new LatLng(lat,lng),estimatedTime, TransportType.getByName(transport));
                                 Session.getInstance().setTrip(trip);
                                 returnToActiveTrip(trip);
                             }
@@ -359,6 +379,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         params.put("time", String.valueOf(mapService.getActualEstimatedTime()));
         params.put("lat", String.valueOf(activeDestination.latitude));
         params.put("lng", String.valueOf(activeDestination.longitude));
+        params.put("transport", activeTransportType.getName());
 
         CustomRequest jsObjRequest = new CustomRequest(Request.Method.POST, getString(R.string.map_rest_url)+"/trip", params,
                 new Response.Listener<JSONObject>() {
@@ -366,7 +387,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     public void onResponse(JSONObject response) {
                         if(!response.isNull("id")) {
                             try {
-                                TripInfo trip = new TripInfo(String.valueOf(response.get("id")), activeDestination, mapService.getActualEstimatedTime());
+                                TripInfo trip = new TripInfo(String.valueOf(response.get("id")), activeDestination, mapService.getActualEstimatedTime(), activeTransportType);
                                 Session.getInstance().setTrip(trip);
                             } catch (JSONException e) {
                                 Toast.makeText(getBaseContext(), R.string.msg_server_error, Toast.LENGTH_SHORT).show();
@@ -419,11 +440,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void addTime(View view){
         _addTimeButton.setEnabled(false);
-        if(activeDestination == null){
-            Toast.makeText(this, "Selecione um destino primeiro!", Toast.LENGTH_LONG).show();
+        if(activeDestination == null) {
+            Toast.makeText(getBaseContext(), R.string.msg_error_add_destiny, Toast.LENGTH_SHORT).show();
+            _addTimeButton.setEnabled(true);
+        }else if(activeTransportType == null){
+            Toast.makeText(getBaseContext(), R.string.msg_error_select_transport_type, Toast.LENGTH_SHORT).show();
             _addTimeButton.setEnabled(true);
         }else if(!isTripActive()){
-            mapService.addActualEstimatedTime(1800);
+            mapService.addActualEstimatedTime(900);
             updateEstimatedTimeText();
             _addTimeButton.setEnabled(true);
         }else{// em viagem
@@ -433,7 +457,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     new Response.Listener<JSONObject>() {
                         @Override
                         public void onResponse(JSONObject response) {
-                            mapService.addActualEstimatedTime(1800);
+                            mapService.addActualEstimatedTime(900);
                             updateEstimatedTimeText();
                             _addTimeButton.setEnabled(true);
                         }
@@ -471,6 +495,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private void endTripSuccess() {
         Toast.makeText(this, "Viagem encerrada!", Toast.LENGTH_LONG).show();
         _endTripButton.setEnabled(true);
+        activeDestination = null;
+        activeTransportType = null;
+        clearImageButtonBackGrounds();
 
         mapService.clear();
         mMap.clear();
@@ -494,59 +521,57 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     public void changeToCar(View view){
-        if(isTripActive()){
+        if(isTripActive() || activeDestination == null){
             return;
         }
         activeTransportType = TransportType.DRIVING;
         mapService.changeTransportType(activeTransportType);
 
         clearImageButtonBackGrounds();
-        _carButton.setBackgroundColor(Color.WHITE);
-        _carButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border_top));
-        _carButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.car_selected_32));
+        transportSelected(_carButton,R.drawable.car_selected_32);
         updateEstimatedTimeText();
     }
 
     public void changeToBus(View view){
-        if(isTripActive()){
+        if(isTripActive() || activeDestination == null){
             return;
         }
         activeTransportType = TransportType.PUBLIC_TRANSPORT;
         mapService.changeTransportType(activeTransportType);
 
         clearImageButtonBackGrounds();
-        _busButton.setBackgroundColor(Color.WHITE);
-        _busButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border_top));
-        _busButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.bus_selected_32));
+        transportSelected(_busButton,R.drawable.bus_selected_32);
         updateEstimatedTimeText();
     }
 
     public void changeToWalk(View view){
-        if(isTripActive()){
+        if(isTripActive() || activeDestination == null){
             return;
         }
         activeTransportType = TransportType.WALKING;
         mapService.changeTransportType(activeTransportType);
 
         clearImageButtonBackGrounds();
-        _walkingButton.setBackgroundColor(Color.WHITE);
-        _walkingButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border_top));
-        _walkingButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.walk_selected_32));
+        transportSelected(_walkingButton,R.drawable.walk_selected_32);
         updateEstimatedTimeText();
     }
 
     public void changeToBike(View view){
-        if(isTripActive()){
+        if(isTripActive() || activeDestination == null){
             return;
         }
-        activeTransportType = TransportType.BICYCLING;
+        activeTransportType = BICYCLING;
         mapService.changeTransportType(activeTransportType);
 
         clearImageButtonBackGrounds();
-        _bikeButton.setBackgroundColor(Color.WHITE);
-        _bikeButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border_top));
-        _bikeButton.setImageDrawable(ContextCompat.getDrawable(this,R.drawable.bike_selected_32));
+        transportSelected(_bikeButton,R.drawable.bike_selected_32);
         updateEstimatedTimeText();
+    }
+
+    private void transportSelected(ImageButton transportButton, int drawableId) {
+        transportButton.setBackgroundColor(Color.WHITE);
+        transportButton.setBackground(ContextCompat.getDrawable(this,R.drawable.border_top));
+        transportButton.setImageDrawable(ContextCompat.getDrawable(this,drawableId));
     }
 
     private void clearImageButtonBackGrounds() {
@@ -603,6 +628,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
                 } else {
                     Toast.makeText(getBaseContext(), R.string.msg_location_permission_necessary, Toast.LENGTH_LONG).show();
                 }

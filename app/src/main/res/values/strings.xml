@@ -57,5 +57,5 @@
     <string name="msg_error_add_destiny">Adicione um destino!</string>
     <string name="msg_error_select_transport_type">Selecione o meio de transporte!</string>
     <string name="msg_error_add_estimated_time">Adicione uma estimativa de tempo!</string>
-    <string name="msg_error_activate_gps">Ative o GPS para iniciar a viagem!</string>
+    <string name="msg_error_activate_gps">Ative o GPS (Alta Precisão) para iniciar a viagem!</string>
 </resources>

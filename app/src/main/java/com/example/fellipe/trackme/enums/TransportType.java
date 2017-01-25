@@ -24,4 +24,14 @@ public enum TransportType {
     public void setName(String name) {
         this.name = name;
     }
+
+    public static TransportType getByName(String name){
+        for (TransportType t: values()) {
+            if(t.getName().equalsIgnoreCase(name)){
+                return t;
+            }
+        }
+        return null;
+    }
+
 }
