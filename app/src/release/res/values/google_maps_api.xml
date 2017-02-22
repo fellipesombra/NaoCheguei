@@ -17,6 +17,10 @@
     string in this file.
     -->
     <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">
-        YOUR_KEY_HERE
+        AIzaSyDsNu-LvoAh7iSSdaHr4-DxuT6OJjnxeT8
+    </string>
+
+    <string name="google_distance_matrix_key" templateMergeStrategy="preserve" translatable="false">
+        AIzaSyAL6JkuTM-X8C5M9zz6iyJZmVQgetheP50
     </string>
 </resources>

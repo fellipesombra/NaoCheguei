@@ -13,6 +13,7 @@ import android.location.LocationListener;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.PowerManager;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.NotificationCompat;
@@ -112,6 +113,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private TransportType activeTransportType;
     private LatLng activeDestination;
 
+    private PowerManager.WakeLock wakeLock;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,19 +139,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         };
 
-        location = new SimpleLocation(this);
-
         setSupportActionBar(myToolbar);
 
-        instantiateMap();
-        checkAtiveTrip();
-        updateStartTripButton();
+        PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                "NaoChegueiViagemLock");
 
+        if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED) {
+            instantiateMap();
+            checkAtiveTrip();
+            updateStartTripButton();
+        }else{
+            requestLocationPermission();
+        }
 
     }
 
 
     private void instantiateMap() {
+        location = new SimpleLocation(this);
         mapService = new MapService(getResources().getString(R.string.google_distance_matrix_key), this, location);
 
         MapFragment mapFragment = (MapFragment) getFragmentManager()
@@ -485,6 +495,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         location.beginUpdates();
         locationTracker = new LocationTracker(location,handler,this,mapService,_timeText);
         handler.postDelayed(locationTracker, 0);
+
+        wakeLock.acquire();
     }
 
     private void startTripFail() {
@@ -508,6 +520,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         location.endUpdates();
         handler.removeCallbacks(locationTracker);
+        wakeLock.release();
     }
 
     private boolean isTripActive(){
@@ -608,11 +621,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 == PackageManager.PERMISSION_GRANTED) {
             mMap.setMyLocationEnabled(true);
             centerMapUserLocation();
-        } else {
-            requestLocationPermission();
         }
-
-        //mMap.moveCamera(CameraUpdateFactory.newLatLng(curLocation));
     }
 
     private void requestLocationPermission(){
@@ -628,9 +637,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // If request is cancelled, the result arrays are empty.
                 if (grantResults.length > 0
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
+                    instantiateMap();
+                    checkAtiveTrip();
+                    updateStartTripButton();
                 } else {
                     Toast.makeText(getBaseContext(), R.string.msg_location_permission_necessary, Toast.LENGTH_LONG).show();
+                    requestLocationPermission();
                 }
                 return;
             }

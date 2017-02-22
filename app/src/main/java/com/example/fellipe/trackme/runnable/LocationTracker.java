@@ -68,7 +68,7 @@ public class LocationTracker implements Runnable{
                 handler.sendMessage(message1);
             }
 
-            if((secondsCounter == 61 || secondsCounter == 1) && isInDestinationRadius()){
+            if((secondsCounter % 20 == 0) && isInDestinationRadius()){
                 Message message2 = new Message();
                 message2.what = HandlerMessagesCode.ARRIVED_AT_DESTIONATION.getCode();
                 handler.sendMessage(message2);
