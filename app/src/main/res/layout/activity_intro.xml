@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/primary"
-    tools:context="com.example.fellipe.trackme.IntroActivity">
+    tools:context="br.com.fellipe.naocheguei.IntroActivity">
 
     <TextView
         android:id="@+id/fullscreen_content"

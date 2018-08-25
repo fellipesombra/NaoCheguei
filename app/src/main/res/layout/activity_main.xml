@@ -117,19 +117,38 @@
                 android:padding="5dp"
                 android:elevation="2dp">
 
-                <Button
+                <LinearLayout
+                    android:orientation="horizontal"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:id="@+id/btn_add_tempo"
-                    android:onClick="addTime"
-                    android:elevation="2dp"
                     android:layout_weight="1"
-                    android:layout_marginRight="15dp"
-                    android:text="Adicionar 15mins"
-                    android:textSize="14sp"
-                    android:backgroundTint="#FDD835"
-                    android:textAllCaps="false" />
+                    android:elevation="2dp">
 
+                    <Button
+                        android:id="@+id/btn_reduce_tempo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:backgroundTint="#FF8C00"
+                        android:elevation="2dp"
+                        android:onClick="reduceTime"
+                        android:text="- 5mins"
+                        android:textAllCaps="false"
+                        android:textSize="14sp" />
+
+                    <Button
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/btn_add_tempo"
+                        android:onClick="addTime"
+                        android:elevation="2dp"
+                        android:layout_weight="1"
+                        android:text="+ 5mins"
+                        android:textSize="14sp"
+                        android:backgroundTint="#FDD835"
+                        android:textAllCaps="false" />
+
+                    </LinearLayout>
                 <Button
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
